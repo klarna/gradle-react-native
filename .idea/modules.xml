@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/sample/ReactNativePlugin/android/ReactNativePlugin.iml" filepath="$PROJECT_DIR$/sample/ReactNativePlugin/android/ReactNativePlugin.iml" group="ReactNativePlugin" />
+      <module fileurl="file://$PROJECT_DIR$/sample/ReactNativePlugin/android/app/app.iml" filepath="$PROJECT_DIR$/sample/ReactNativePlugin/android/app/app.iml" group="ReactNativePlugin/app" />
       <module fileurl="file://$PROJECT_DIR$/gradle-react-native.iml" filepath="$PROJECT_DIR$/gradle-react-native.iml" group="gradle-react-native" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin.iml" group="gradle-react-native/plugin" />
     </modules>
   </component>
 </project>

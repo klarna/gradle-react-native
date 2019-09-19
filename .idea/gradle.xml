@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/sample/ReactNativePlugin/android" name="ReactNativePlugin">
+                <projects>
+                  <project path="$PROJECT_DIR$/sample/ReactNativePlugin/android" />
+                  <project path="$PROJECT_DIR$/sample/ReactNativePlugin/android/app" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="testRunner" value="PLATFORM" />
         <option name="distributionType" value="DEFAULT_WRAPPED" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/plugin" />
+            <option value="$PROJECT_DIR$/sample/ReactNativePlugin/android" />
+            <option value="$PROJECT_DIR$/sample/ReactNativePlugin/android/app" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
