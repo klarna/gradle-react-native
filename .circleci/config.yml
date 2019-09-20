@@ -13,12 +13,9 @@ references:
   restore_cache: &restore_cache
     restore_cache:
       keys:
-        - dependency-cache-{{ checksum "CACHE_HASH" }}
-        - processor-{{ .Revision }}
-        - annotations-{{ .Revision }}
-        - generators-{{ .Revision }}
-        - rx-annotations-{{ .Revision }}
-        - rx-generators-{{ .Revision }}
+        - gradle-cache-{{ checksum "CACHE_HASH" }}
+        - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
+        - something-else-{{ .Revision }}
         # fallback to using the latest cache if no exact match is found
         - dependency-cache-
   # Filter by version tag: "1.0 .. 1.0.0.1-something"
@@ -74,13 +71,25 @@ jobs:
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
+      - run: # yarn install
+          name: Install Yarn and resolve project dependencies
+          command: |
+            curl -o- -L https://yarnpkg.com/install.sh | bash
+            pushd sample/ReactNativePlugin
+            yarn
+            popd
       - run: # dependencies
           name: Download Dependencies
           command: ./gradlew dependencyUpdates -Drevision=release
-      - save_cache: # dependencies
+      - save_cache: # gradle dependencies
           paths:
             - ~/.gradle
-          key: dependency-cache-{{ checksum "CACHE_HASH" }}
+          key: gradle-cache-{{ checksum "CACHE_HASH" }}
+      - save_cache: # yarn dependencies
+          paths:
+            - ~/.cache/yarn
+            - sample/ReactNativePlugin/node_modules
+          key: yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
           
 
   ## DEBUG binaries
