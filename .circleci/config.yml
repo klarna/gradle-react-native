@@ -6,7 +6,7 @@ references:
   container_config: &android_container
     working_directory: ~/gradle-react-native
     docker: # https://circleci.com/docs/2.0/circleci-images/#android
-      - image: circleci/android:api-29
+      - image: circleci/android:api-29-node
     environment:
       JVM_OPTS: -Xmx3g
   # Recover cache for all jobs
