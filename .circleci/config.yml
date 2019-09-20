@@ -9,15 +9,6 @@ references:
       - image: circleci/android:api-29-node
     environment:
       JVM_OPTS: -Xmx3g
-  # Recover cache for all jobs
-  restore_cache: &restore_cache
-    restore_cache:
-      keys:
-        - gradle-cache-{{ checksum "CACHE_HASH" }}
-        - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
-        - something-else-{{ .Revision }}
-        # fallback to using the latest cache if no exact match is found
-        - dependency-cache-
   # Filter by version tag: "1.0 .. 1.0.0.1-something"
   filters: &version_filters
     tags: # 1.0 ... 1.0.1.1
@@ -31,6 +22,22 @@ environment:
 
 ## Reusable commands
 commands:
+  # Recover cache for all jobs
+  restore_dependencies_cache:
+    steps:
+      - restore_cache:
+          name: Restore Gradle Build Cache
+          keys:
+            - gradle-cache-{{ checksum "CACHE_HASH" }}
+            # fallback to using the latest cache if no exact match is found
+            - dependency-cache-
+      - restore_cache:
+          name: Restore Yarn cache
+          keys:
+            - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
+      - restore_cache:
+          keys:
+            - something-else-{{ .Revision }}
   checksum_sources:
     steps:
       - run:
@@ -67,7 +74,7 @@ jobs:
     steps:
       - checkout
       - checksum_sources
-      - *restore_cache
+      - restore_dependencies_cache
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
@@ -90,7 +97,7 @@ jobs:
             - ~/.cache/yarn
             - sample/ReactNativePlugin/node_modules
           key: yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
-          
+
 
   ## DEBUG binaries
   debug:
@@ -98,7 +105,7 @@ jobs:
     steps:
       - checkout
       - checksum_sources
-      - *restore_cache
+      - restore_dependencies_cache
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
@@ -112,7 +119,7 @@ jobs:
     steps:
       - checkout
       - checksum_sources
-      - *restore_cache
+      - restore_dependencies_cache
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
@@ -137,7 +144,7 @@ jobs:
       - save_cache: # annotations
           paths:
             - ~/autoproxy-annotations/build
-          key: annotations-{{ .Revision }}    
+          key: annotations-{{ .Revision }}
       - save_cache: # generator
           paths:
             - ~/autoproxy-generators/build
@@ -145,7 +152,7 @@ jobs:
       - save_cache: # processor
           paths:
             - ~/autoproxy-processor/build
-          key: processor-{{ .Revision }}    
+          key: processor-{{ .Revision }}
       - save_cache: # rx-annotations
           paths:
             - ~/autoproxy-rx-annotations/build
@@ -162,7 +169,7 @@ jobs:
     steps:
       - checkout
       - checksum_sources
-      - *restore_cache
+      - restore_dependencies_cache
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
@@ -191,7 +198,7 @@ jobs:
     steps:
       - checkout
       - checksum_sources
-      - *restore_cache
+      - restore_dependencies_cache
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
@@ -208,7 +215,7 @@ jobs:
     steps:
       - checkout
       - checksum_sources
-      - *restore_cache
+      - restore_dependencies_cache
       - run: # version
           name: Version Autogenerate
           command: bash gradle/version-up.sh
@@ -235,7 +242,7 @@ workflows:
       - dependencies
     triggers:
       - schedule: # https://crontab.guru/#0_0_*_*_* - every day
-          cron: "0 0 * * *" 
+          cron: "0 0 * * *"
           filters:
             branches:
               only:
