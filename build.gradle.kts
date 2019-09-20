@@ -60,6 +60,9 @@ arrayOf("debug", "release").forEach { buildType ->
 
 /* Join dependencies of the composed porject with plugin project. ct*/
 tasks.findByName("dependencies")?.dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:dependencies"))
+tasks.register("lint") {
+    dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:lint"))
+}
 //endregion
 
 /** Always use ALL distribution not BINARY only. */
