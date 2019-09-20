@@ -36,8 +36,13 @@ commands:
           keys:
             - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
       - restore_cache:
+          name: Plugin Build folder cache
           keys:
-            - something-else-{{ .Revision }}
+            - plugin-build-{{ .Revision }}
+      - restore_cache:
+          name: Sample application folder cache
+          keys:
+            - sample-build-{{ .Revision }}
   checksum_sources:
     steps:
       - run:
@@ -79,15 +84,16 @@ jobs:
           name: Version Autogenerate
           command: bash gradle/version-up.sh
       - run: # yarn install
-          name: Install Yarn and resolve project dependencies
+          name: Install ReactNative project dependencies
           command: |
-            # curl -o- -L https://yarnpkg.com/install.sh | bash
             pushd sample/ReactNativePlugin
             yarn
             popd
       - run: # dependencies
           name: Download Dependencies
-          command: ./gradlew dependencyUpdates -Drevision=release
+          command: |
+            ./gradlew dependencies
+            ./gradlew dependencyUpdates -Drevision=release
       - save_cache: # gradle dependencies
           paths:
             - ~/.gradle
@@ -98,8 +104,7 @@ jobs:
             - sample/ReactNativePlugin/node_modules
           key: yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
 
-
-  ## DEBUG binaries
+  ## DEBUG or SNAPSHOT binaries
   debug:
     <<: *android_container
     steps:
@@ -111,7 +116,12 @@ jobs:
           command: bash gradle/version-up.sh
       - run: # build
           name: Compile Debug Binaries
-          command: ./gradlew assembleDebug
+          command: |
+            set -x
+            rm -rf ~/plugin/build/libs
+            # extract new proposed version from version.properties
+            export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
+            ./gradlew build assembleDebug -Pversion=${VER}-SNAPSHOT
 
   ## RELEASE binaries
   release:
@@ -125,42 +135,23 @@ jobs:
           command: bash gradle/version-up.sh
       - run: # build
           name: Compile Release Binaries
-          command: ./gradlew assemble
+          command: |
+            set -x
+            rm -rf ~/plugin/build/libs
+            # extract new proposed version from version.properties
+            export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
+            ./gradlew build assembleRelease -Pversion=${VER}
       - store_artifacts: # annotations
-          path: ~/autoproxy-annotations/build/libs
+          path: ~/plugin/build/libs
           destination: libs
-      - store_artifacts: # generator
-          path: ~/autoproxy-generators/build/libs
-          destination: libs
-      - store_artifacts: # processor
-          path: ~/autoproxy-processor/build/libs
-          destination: libs
-      - store_artifacts: # rx-annotations
-          path: ~/autoproxy-rx-annotations/build/libs
-          destination: libs
-      - store_artifacts: # rx-generators
-          path: ~/autoproxy-rx-generators/build/libs
-          destination: libs
-      - save_cache: # annotations
+      - save_cache: # plugin
           paths:
-            - ~/autoproxy-annotations/build
-          key: annotations-{{ .Revision }}
-      - save_cache: # generator
+            - ~/plugin/build
+          key: plugin-build-{{ .Revision }}
+      - save_cache: # sample
           paths:
-            - ~/autoproxy-generators/build
-          key: generators-{{ .Revision }}
-      - save_cache: # processor
-          paths:
-            - ~/autoproxy-processor/build
-          key: processor-{{ .Revision }}
-      - save_cache: # rx-annotations
-          paths:
-            - ~/autoproxy-rx-annotations/build
-          key: rx-annotations-{{ .Revision }}
-      - save_cache: # rx-generators
-          paths:
-            - ~/autoproxy-rx-generators/build
-          key: rx-generators-{{ .Revision }}
+            - ~/sample/ReactNativePlugin/android/app/build
+          key: sample-build-{{ .Revision }}
 
   ## Unit Tests
   # https://circleci.com/docs/2.0/configuration-reference/#store_test_results

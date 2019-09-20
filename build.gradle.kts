@@ -1,6 +1,6 @@
 /* React Native Build Gradle Plugin */
-import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
+/** Default repositories for plugin search */
 buildscript {
     repositories {
         gradlePluginPortal()
@@ -9,6 +9,7 @@ buildscript {
     }
 }
 
+/* List of all included plugins */
 plugins {
     /* https://plugins.gradle.org/plugin/com.gradle.build-scan */
     id("com.gradle.build-scan") version "2.4.2"
@@ -26,20 +27,6 @@ plugins {
 
     /* https://github.com/ben-manes/gradle-versions-plugin */
     id("com.github.ben-manes.versions") version "0.25.0"
-}
-
-buildScan {
-    termsOfServiceUrl = "https://gradle.com/terms-of-service"
-    termsOfServiceAgree = "yes"
-
-    // ./gradlew build -Dscan.capture-task-input-files
-    //isCaptureTaskInputFiles = true
-
-    publishAlwaysIf(!System.getenv("CI").isNullOrEmpty())
-    tag("CI")
-
-    // https://github.com/klarna/gradle-react-native/tree/master
-    link("VCS", "https://github.com/klarna/gradle-react-native/tree/${System.getProperty("vcs.branch")}")
 }
 
 allprojects {
@@ -61,10 +48,41 @@ dependencies {
     subprojects.forEach { archives(it) }
 }
 
+//region High level tasks
+/* Introduce high-level build tasks: assembleDebug && assembleRelease */
+arrayOf("debug", "release").forEach { buildType ->
+    arrayOf("").forEach { flavor ->
+        tasks.register("assemble${flavor.capitalize()}${buildType.capitalize()}") {
+            dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:assemble${flavor.capitalize()}${buildType.capitalize()}"))
+        }
+    }
+}
+
+/* Join dependencies of the composed porject with plugin project. ct*/
+tasks.findByName("dependencies")?.dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:dependencies"))
+//endregion
+
 /** Always use ALL distribution not BINARY only. */
 tasks.wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
+
+//region buildScan
+/* Configuration of build scan tool */
+buildScan {
+    termsOfServiceUrl = "https://gradle.com/terms-of-service"
+    termsOfServiceAgree = "yes"
+
+    // ./gradlew build -Dscan.capture-task-input-files
+    //isCaptureTaskInputFiles = true
+
+    publishAlwaysIf(!System.getenv("CI").isNullOrEmpty())
+    tag("CI")
+
+    // https://github.com/klarna/gradle-react-native/tree/master
+    link("VCS", "https://github.com/klarna/gradle-react-native/tree/${System.getProperty("vcs.branch")}")
+}
+//endregion
 
 //region dependencyUpdates
 fun isNonStable(version: String): Boolean {
@@ -74,7 +92,7 @@ fun isNonStable(version: String): Boolean {
     return isStable.not()
 }
 
-tasks.withType<DependencyUpdatesTask> {
+tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
     // disallow release candidates as upgradable versions from stable versions
     rejectVersionIf {
         isNonStable(candidate.version) && !isNonStable(currentVersion)

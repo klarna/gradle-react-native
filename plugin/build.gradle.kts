@@ -1,6 +1,9 @@
 /* Gradle React Native Plugin */
-group = "com.klarna"
-version = "0.0.1-SNAPSHOT"
+/*
+    NOTES:
+        `version` - injectede from `gradle.properties` of the root project
+        `group` - injectede from `gradle.properties` of the root project
+*/
 
 plugins {
     kotlin("jvm")
