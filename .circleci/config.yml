@@ -74,7 +74,7 @@ jobs:
       - run: # yarn install
           name: Install Yarn and resolve project dependencies
           command: |
-            curl -o- -L https://yarnpkg.com/install.sh | bash
+            # curl -o- -L https://yarnpkg.com/install.sh | bash
             pushd sample/ReactNativePlugin
             yarn
             popd
