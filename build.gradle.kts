@@ -31,10 +31,10 @@ plugins {
 
 allprojects {
     ext {
-        set("buildToolsVersion", "28.0.3")
+        set("buildToolsVersion", "29.0.2")
         set("minSdkVersion", 16)
-        set("compileSdkVersion", 28)
-        set("targetSdkVersion", 28)
+        set("compileSdkVersion", 29)
+        set("targetSdkVersion", 29)
         set("supportLibVersion", "28.0.0")
     }
     repositories {
