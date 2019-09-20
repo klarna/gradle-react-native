@@ -12,3 +12,6 @@ local.properties
 
 # results of `gradle/version-up.sh` script
 version.properties
+
+# CircliCI hash
+CACHE_HASH*

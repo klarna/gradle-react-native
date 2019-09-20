@@ -11,7 +11,8 @@ import kotlin.test.assertNotNull
  * A simple unit test for the 'com.klarna.gradle.reactnative.greeting' plugin.
  */
 class GradleReactNativePluginTest {
-    @Test fun `plugin registers task`() {
+    @Test
+    fun `plugin registers task`() {
         // Create a test project and apply the plugin
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("com.klarna.gradle.reactnative.greeting")

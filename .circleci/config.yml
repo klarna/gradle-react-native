@@ -1,0 +1,299 @@
+version: 2.1
+
+## Reusable YML aliases
+references:
+  # Android Container API 29
+  container_config: &android_container
+    working_directory: ~/gradle-react-native
+    docker: # https://circleci.com/docs/2.0/circleci-images/#android
+      - image: circleci/android:api-29
+    environment:
+      JVM_OPTS: -Xmx3g
+  # Recover cache for all jobs
+  restore_cache: &restore_cache
+    restore_cache:
+      keys:
+        - dependency-cache-{{ checksum "CACHE_HASH" }}
+        - processor-{{ .Revision }}
+        - annotations-{{ .Revision }}
+        - generators-{{ .Revision }}
+        - rx-annotations-{{ .Revision }}
+        - rx-generators-{{ .Revision }}
+        # fallback to using the latest cache if no exact match is found
+        - dependency-cache-
+  # Filter by version tag: "1.0 .. 1.0.0.1-something"
+  filters: &version_filters
+    tags: # 1.0 ... 1.0.1.1
+      only: /^[0-9]+(\.[0-9]+).*/
+    branches:
+      ignore: /.*/
+
+## Global environment
+environment:
+  TERM: dumb
+
+## Reusable commands
+commands:
+  checksum_sources:
+    steps:
+      - run:
+          name: Calculate the checksums
+          command: |
+            # https://discuss.circleci.com/t/caching-based-on-the-checksum-of-a-directorys-contents/28748
+            # https://unix.stackexchange.com/questions/102191/find-with-multiple-name-and-exec-executes-only-the-last-matches-of-nam
+            cp /dev/null CACHE_HASH
+            ## echo $(find ./plugin/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+            ## echo $(find ./sample/ReactNativePlugin/android/app/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+            ## echo $(find . -type f -not -path "*/node_modules/*" -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+            echo $(git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/" | xargs md5sum 2>/dev/null) >>CACHE_HASH
+            # calculate final cache hash
+            ## echo $(cat CACHE_HASH | md5sum | cut -d' ' -f1) >CACHE_HASH
+  git-list-ignored-files:
+    steps:
+      - run:
+          name: List of all ignored files
+          command: |
+            git status --ignored
+  git-list-tracked-files:
+    steps:
+      - run:
+          name: List all tracked files in folder
+          command: |
+            git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/"
+  # <~ end of commands
+
+## Declare JOBS
+jobs:
+  ## Download all dependencies
+  dependencies:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - *restore_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # dependencies
+          name: Download Dependencies
+          command: ./gradlew dependencyUpdates -Drevision=release
+      - save_cache: # dependencies
+          paths:
+            - ~/.gradle
+          key: dependency-cache-{{ checksum "CACHE_HASH" }}
+          
+
+  ## DEBUG binaries
+  debug:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - *restore_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # build
+          name: Compile Debug Binaries
+          command: ./gradlew assembleDebug
+
+  ## RELEASE binaries
+  release:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - *restore_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # build
+          name: Compile Release Binaries
+          command: ./gradlew assemble
+      - store_artifacts: # annotations
+          path: ~/autoproxy-annotations/build/libs
+          destination: libs
+      - store_artifacts: # generator
+          path: ~/autoproxy-generators/build/libs
+          destination: libs
+      - store_artifacts: # processor
+          path: ~/autoproxy-processor/build/libs
+          destination: libs
+      - store_artifacts: # rx-annotations
+          path: ~/autoproxy-rx-annotations/build/libs
+          destination: libs
+      - store_artifacts: # rx-generators
+          path: ~/autoproxy-rx-generators/build/libs
+          destination: libs
+      - save_cache: # annotations
+          paths:
+            - ~/autoproxy-annotations/build
+          key: annotations-{{ .Revision }}    
+      - save_cache: # generator
+          paths:
+            - ~/autoproxy-generators/build
+          key: generators-{{ .Revision }}
+      - save_cache: # processor
+          paths:
+            - ~/autoproxy-processor/build
+          key: processor-{{ .Revision }}    
+      - save_cache: # rx-annotations
+          paths:
+            - ~/autoproxy-rx-annotations/build
+          key: rx-annotations-{{ .Revision }}
+      - save_cache: # rx-generators
+          paths:
+            - ~/autoproxy-rx-generators/build
+          key: rx-generators-{{ .Revision }}
+
+  ## Unit Tests
+  # https://circleci.com/docs/2.0/configuration-reference/#store_test_results
+  test:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - *restore_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # tests
+          name: Run unit tests
+          command: ./gradlew test
+      - run: # collect results
+          name: Save test results
+          command: |
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/test-results
+      - store_test_results:
+          path: sample/build/test-results
+      - store_artifacts:
+          path: sample/build/reports
+          destination: reports
+      - store_artifacts:
+          path: ~/test-results/junit
+
+  ## Lint
+  lint:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - *restore_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # lint
+          name: Run Lint
+          command: ./gradlew lint
+      - store_artifacts:
+          path: sample/build/reports
+          destination: reports
+
+  ## Deploy
+  deploy:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - *restore_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # lint
+          name: Run Lint
+          command: ./gradlew lint
+
+#
+# https://circleci.com/docs/2.0/workflows/
+#          
+workflows:
+  version: 2
+  quick_build:
+    jobs:
+      - dependencies
+      - debug:
+          requires:
+            - dependencies
+      - lint:
+          requires:
+            - debug
+  warmup_cache_weekly: # keep our cache always warm
+    jobs:
+      - dependencies
+    triggers:
+      - schedule: # https://crontab.guru/#0_0_*_*_* - every day
+          cron: "0 0 * * *" 
+          filters:
+            branches:
+              only:
+                - master
+  build_test_deploy:
+    jobs:
+      - dependencies:
+          filters:
+            branches:
+              only:
+                - master
+      - debug:
+          requires:
+            - dependencies
+      - release:
+          requires:
+            - dependencies
+      - lint:
+          requires:
+            - debug
+      - test:
+          requires:
+            - release
+            - debug
+      - gatekeeper:
+          type: approval
+          requires:
+            - test
+            - lint
+      - deploy:
+          requires:
+            - gatekeeper
+  tag_build_test_deploy:
+    jobs:
+      - dependencies:
+          filters: *version_filters
+      - debug:
+          requires:
+            - dependencies
+          filters: *version_filters
+      - release:
+          requires:
+            - dependencies
+          filters: *version_filters
+      - lint:
+          requires:
+            - debug
+          filters: *version_filters
+      - test:
+          requires:
+            - release
+            - debug
+          filters: *version_filters
+      - gatekeeper:
+          type: approval
+          requires:
+            - test
+            - lint
+          filters: *version_filters
+      - deploy:
+          requires:
+            - gatekeeper
+          filters: *version_filters
+
+# References:
+#   https://github.com/asksven/BetterBatteryStats/blob/master/circle.yml
+#   https://github.com/santaevpavel/ClipboardTranslator/blob/master/.circleci/config.yml
+#   https://github.com/unhappychoice/DroidFlyer/blob/master/.circleci/config.yml
+#   https://github.com/igorwojda/Android-Showcase/blob/master/.circleci/config.yml
+#
