@@ -43,6 +43,14 @@ allprojects {
     }
 }
 
+subprojects {
+    apply(plugin = "io.gitlab.arturbosch.detekt")
+    detekt {
+        config = files("${project.rootDir}/.circleci/detekt.yml")
+        parallel = true
+    }
+}
+
 dependencies {
     // Make the root project archives configuration depend on every subproject
     subprojects.forEach { archives(it) }
@@ -61,7 +69,7 @@ arrayOf("debug", "release").forEach { buildType ->
 /* Join dependencies of the composed porject with plugin project. ct*/
 tasks.findByName("dependencies")?.dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:dependencies"))
 tasks.register("lint") {
-    dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:lint"))
+    dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:lintDebug"))
 }
 //endregion
 

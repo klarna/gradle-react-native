@@ -152,6 +152,8 @@ jobs:
             export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
             ./gradlew build assembleDebug -Pversion=${VER}-SNAPSHOT
 
+
+
   ## RELEASE binaries
   release:
     <<: *android_container
@@ -183,7 +185,6 @@ jobs:
           key: sample-build-{{ .Revision }}
 
   ## Unit Tests
-  # https://circleci.com/docs/2.0/configuration-reference/#store_test_results
   test:
     <<: *android_container
     steps:
@@ -229,6 +230,40 @@ jobs:
           path: sample/ReactNativePlugin/android/app/build/reports
           destination: reports
 
+  ## KtLint
+  ktlint:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - restore_dependencies_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # lint
+          name: Run Lint
+          command: ./gradlew ktlintCheck
+      - store_artifacts:
+          path: sample/ReactNativePlugin/android/app/build/reports
+          destination: reports
+
+  ## Detekt
+  detekt:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - restore_dependencies_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # lint
+          name: Run Lint
+          command: ./gradlew detekt
+      - store_artifacts:
+          path: plugin/build/reports/
+          destination: reports
+
   ## Deploy
   deploy:
     <<: *android_container
@@ -254,9 +289,6 @@ workflows:
       - debug:
           requires:
             - dependencies
-      - lint:
-          requires:
-            - debug
   warmup_cache_daily: # keep our cache always warm
     jobs:
       - dependencies
@@ -277,15 +309,23 @@ workflows:
       - lint:
           requires:
             - debug
+      - ktlint:
+          requires:
+            - debug
+      - detekt:
+          requires:
+            - debug
       - test:
           requires:
-            - release
             - debug
       - gatekeeper:
           type: approval
           requires:
             - test
             - lint
+            - ktlint
+            - detekt
+            - release
       - deploy:
           requires:
             - gatekeeper
@@ -326,4 +366,5 @@ workflows:
 #   https://github.com/santaevpavel/ClipboardTranslator/blob/master/.circleci/config.yml
 #   https://github.com/unhappychoice/DroidFlyer/blob/master/.circleci/config.yml
 #   https://github.com/igorwojda/Android-Showcase/blob/master/.circleci/config.yml
+# https://circleci.com/docs/2.0/configuration-reference/#store_test_results
 #
