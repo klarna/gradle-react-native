@@ -30,10 +30,12 @@ class GradleReactNativePluginFunctionalTest {
                 .withPluginClasspath()
                 .withProjectDir(projectDir)
                 .withArguments("greeting")
-                .build();
+                .build()
 
         // Verify the result
-        assertTrue(result.output.contains("Hello from plugin 'com.klarna.gradle.reactnative.greeting'"))
+        assertTrue(result.output.contains(
+                "Hello from plugin 'com.klarna.gradle.reactnative.greeting'"
+        ))
     }
 
     @Test
@@ -59,10 +61,11 @@ class GradleReactNativePluginFunctionalTest {
                 .withPluginClasspath()
                 .withProjectDir(projectDir)
                 .withArguments("greeting")
-                .build();
+                .build()
 
         // Verify the result
-        assertTrue(result.output.contains("Hello from plugin 'com.klarna.gradle.reactnative.greeting'"))
-
+        assertTrue(result.output.contains(
+                "Hello from plugin 'com.klarna.gradle.reactnative.greeting'"
+        ))
     }
 }

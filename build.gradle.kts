@@ -1,4 +1,5 @@
 /* React Native Build Gradle Plugin */
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 /** Default repositories for plugin search */
 buildscript {
@@ -27,6 +28,9 @@ plugins {
 
     /* https://github.com/ben-manes/gradle-versions-plugin */
     id("com.github.ben-manes.versions") version "0.25.0"
+
+    /* https://github.com/JLLeitschuh/ktlint-gradle */
+    id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
 }
 
 allprojects {
@@ -40,6 +44,33 @@ allprojects {
     repositories {
         google()
         jcenter()
+    }
+
+    // We want to apply ktlint at all project level because it also checks build gradle files
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    // Ktlint configuration for sub-projects
+    ktlint {
+        /* https://github.com/pinterest/ktlint */
+        version.set("0.34.2")
+
+        verbose.set(true)
+        android.set(true)
+        reporters.set(setOf(
+                ReporterType.CHECKSTYLE,
+                ReporterType.JSON
+        ))
+
+        additionalEditorconfigFile.set(file(".editorconfig"))
+        // Unsupported now by current version of the plugin.
+        // diabledRules should be placed into .editconfig file temporary
+//        disabledRules.set(setOf(
+//                "import-ordering"
+//        ))
+
+        filter {
+            exclude { element -> element.file.path.contains("generated/") }
+        }
     }
 }
 
@@ -60,14 +91,17 @@ dependencies {
 /* Introduce high-level build tasks: assembleDebug && assembleRelease */
 arrayOf("debug", "release").forEach { buildType ->
     arrayOf("").forEach { flavor ->
-        tasks.register("assemble${flavor.capitalize()}${buildType.capitalize()}") {
-            dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:assemble${flavor.capitalize()}${buildType.capitalize()}"))
+        val bf = "${flavor.capitalize()}${buildType.capitalize()}"
+        tasks.register("assemble$bf") {
+            dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:assemble$bf"))
         }
     }
 }
 
 /* Join dependencies of the composed porject with plugin project. ct*/
-tasks.findByName("dependencies")?.dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:dependencies"))
+tasks.findByName("dependencies")?.dependsOn(
+        gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
+)
 tasks.register("lint") {
     dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:lintDebug"))
 }
@@ -85,13 +119,15 @@ buildScan {
     termsOfServiceAgree = "yes"
 
     // ./gradlew build -Dscan.capture-task-input-files
-    //isCaptureTaskInputFiles = true
+    // isCaptureTaskInputFiles = true
 
     publishAlwaysIf(!System.getenv("CI").isNullOrEmpty())
     tag("CI")
 
     // https://github.com/klarna/gradle-react-native/tree/master
-    link("VCS", "https://github.com/klarna/gradle-react-native/tree/${System.getProperty("vcs.branch")}")
+    val URL = "https://github.com/klarna/gradle-react-native/tree"
+    val branch = System.getProperty("vcs.branch")
+    link("VCS", "$URL/$branch")
 }
 //endregion
 

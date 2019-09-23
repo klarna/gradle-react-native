@@ -1,0 +1,7 @@
+[*]
+indent_size = 4
+
+[*.{kt,kts}]
+indent_size = 4
+indent_style = space
+disabled_rules = import-ordering, no-wildcard-imports

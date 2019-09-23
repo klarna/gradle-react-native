@@ -228,7 +228,7 @@ jobs:
           command: ./gradlew lint
       - store_artifacts:
           path: sample/ReactNativePlugin/android/app/build/reports
-          destination: reports
+          destination: reports/lint
 
   ## KtLint
   ktlint:
@@ -244,8 +244,8 @@ jobs:
           name: Run Lint
           command: ./gradlew ktlintCheck
       - store_artifacts:
-          path: sample/ReactNativePlugin/android/app/build/reports
-          destination: reports
+          path: plugin/build/reports/ktlint
+          destination: reports/ktlint
 
   ## Detekt
   detekt:
@@ -261,8 +261,8 @@ jobs:
           name: Run Lint
           command: ./gradlew detekt
       - store_artifacts:
-          path: plugin/build/reports/
-          destination: reports
+          path: plugin/build/reports/detekt
+          destination: reports/detekt
 
   ## Deploy
   deploy:
@@ -287,6 +287,15 @@ workflows:
     jobs:
       - dependencies
       - debug:
+          requires:
+            - dependencies
+      - detekt:
+          requires:
+            - dependencies
+      - ktlint:
+          requires:
+            - dependencies
+      - lint:
           requires:
             - dependencies
   warmup_cache_daily: # keep our cache always warm

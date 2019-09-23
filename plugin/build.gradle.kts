@@ -1,4 +1,6 @@
 /* Gradle React Native Plugin */
+
+import org.gradle.api.artifacts.Configuration
 /*
     NOTES:
         `version` - injectede from `gradle.properties` of the root project
@@ -60,7 +62,7 @@ gradlePlugin {
     testSourceSets(functionalTestSourceSet)
 }
 
-var configurationTestImpl: org.gradle.api.artifacts.Configuration = configurations.getByName("testImplementation")
+var configurationTestImpl: Configuration = configurations.getByName("testImplementation")
 configurations.getByName("functionalTestImplementation").extendsFrom(configurationTestImpl)
 
 // Add a task to run the functional tests
