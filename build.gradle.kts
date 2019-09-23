@@ -1,4 +1,7 @@
 /* React Native Build Gradle Plugin */
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 /** Default repositories for plugin search */
@@ -31,6 +34,8 @@ plugins {
 
     /* https://github.com/JLLeitschuh/ktlint-gradle */
     id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
+
+    jacoco
 }
 
 allprojects {
@@ -46,6 +51,7 @@ allprojects {
         jcenter()
     }
 
+    //region ktlint
     // We want to apply ktlint at all project level because it also checks build gradle files
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
@@ -72,13 +78,28 @@ allprojects {
             exclude { element -> element.file.path.contains("generated/") }
         }
     }
+    //endregion
 }
 
 subprojects {
+    //region detekt
     apply(plugin = "io.gitlab.arturbosch.detekt")
     detekt {
         config = files("${project.rootDir}/.circleci/detekt.yml")
         parallel = true
+    }
+    //endregion
+
+    apply(plugin = "jacoco")
+    jacoco {
+        toolVersion = "0.8.4"
+        reportsDir = file("$buildDir/reports/jacoco")
+    }
+
+    tasks.withType<JacocoReport>() {
+        reports {
+            xml.isEnabled = true
+        }
     }
 }
 
@@ -105,6 +126,15 @@ tasks.findByName("dependencies")?.dependsOn(
 tasks.register("lint") {
     dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:lintDebug"))
 }
+tasks.jacocoTestReport {
+    dependsOn(":plugin:test")
+}
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+    }
+}
 //endregion
 
 /** Always use ALL distribution not BINARY only. */
@@ -118,13 +148,13 @@ buildScan {
     termsOfServiceUrl = "https://gradle.com/terms-of-service"
     termsOfServiceAgree = "yes"
 
-    // ./gradlew build -Dscan.capture-task-input-files
-    // isCaptureTaskInputFiles = true
+// ./gradlew build -Dscan.capture-task-input-files
+// isCaptureTaskInputFiles = true
 
     publishAlwaysIf(!System.getenv("CI").isNullOrEmpty())
     tag("CI")
 
-    // https://github.com/klarna/gradle-react-native/tree/master
+// https://github.com/klarna/gradle-react-native/tree/master
     val URL = "https://github.com/klarna/gradle-react-native/tree"
     val branch = System.getProperty("vcs.branch")
     link("VCS", "$URL/$branch")
@@ -139,7 +169,7 @@ fun isNonStable(version: String): Boolean {
     return isStable.not()
 }
 
-tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
+tasks.withType<DependencyUpdatesTask> {
     // disallow release candidates as upgradable versions from stable versions
     rejectVersionIf {
         isNonStable(candidate.version) && !isNonStable(currentVersion)

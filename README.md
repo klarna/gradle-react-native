@@ -1,5 +1,8 @@
 # Gradle React Native Plugin
 
+[![CircleCI](https://circleci.com/gh/klarna/gradle-react-native.svg?style=svg)](https://circleci.com/gh/klarna/gradle-react-native)
+[![codecov](https://codecov.io/gh/klarna/gradle-react-native/branch/master/graph/badge.svg)](https://codecov.io/gh/klarna/gradle-react-native)
+
 ## Setup
 
 ## Usage
@@ -8,7 +11,7 @@
 
 ### Run CircleCI locally
 
-based on: https://circleci.com/docs/2.0/local-cli/
+based on: <https://circleci.com/docs/2.0/local-cli/>
 
 ```bash
 brew install circleci
@@ -28,5 +31,5 @@ brew uninstall circleci
 
 ## References:
 
-* https://www.klg71.de/post/kotlin_gradle_plugin/
-* https://github.com/FRI-DAY/elasticmq-gradle-plugin
+* <https://www.klg71.de/post/kotlin_gradle_plugin/>
+* <https://github.com/FRI-DAY/elasticmq-gradle-plugin>
