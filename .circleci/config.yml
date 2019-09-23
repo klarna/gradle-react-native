@@ -150,7 +150,7 @@ jobs:
             rm -rf ~/plugin/build/libs
             # extract new proposed version from version.properties
             export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
-            ./gradlew build assembleDebug -Pversion=${VER}-SNAPSHOT
+            ./gradlew build assembleDebug -x check -Pversion=${VER}-SNAPSHOT
 
 
 
@@ -171,7 +171,7 @@ jobs:
             rm -rf ~/plugin/build/libs
             # extract new proposed version from version.properties
             export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
-            ./gradlew build assembleRelease -Pversion=${VER}
+            ./gradlew build assembleRelease -x check -Pversion=${VER}
       - store_artifacts: # annotations
           path: ~/plugin/build/libs
           destination: libs
