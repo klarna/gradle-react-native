@@ -5,6 +5,7 @@ package com.klarna.gradle.reactnative
 
 import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 /**
@@ -33,5 +34,21 @@ class GradleReactNativePluginTest {
 
         // Then
         assertNotNull(project.tasks.findByName(CopyRnBundleTask.NAME))
+    }
+
+    @Test
+    fun `plugin register extension`() {
+        // Given
+        val project = ProjectBuilder.builder().build()
+
+        // When
+        project.plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+        // Then
+        val actual: ReactNativeExtension? = project.extensions
+            .findByName(GradleReactNativePlugin.EXTENSION) as ReactNativeExtension?
+
+        assertNotNull(actual)
+        assertEquals("../../", actual.root)
     }
 }

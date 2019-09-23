@@ -1,6 +1,7 @@
 package com.klarna.gradle.reactnative
 
 import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 
 /**
  * <pre>
@@ -28,6 +29,6 @@ open class ReactNativeExtension(project: Project) {
     var enableHermes: Boolean = false
 
     init {
-        println("Attached to: ${project.name}")
+        project.logger.log(LogLevel.DEBUG, "Extension registered to ${project.name}")
     }
 }
