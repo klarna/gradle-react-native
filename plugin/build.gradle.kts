@@ -53,8 +53,8 @@ val functionalTestSourceSet = sourceSets.create("functionalTest") {
 gradlePlugin {
     // Define the plugin
     plugins {
-        create("greeting") {
-            id = "com.klarna.gradle.reactnative.greeting"
+        create("reactnative") {
+            id = "com.klarna.gradle.reactnative"
             implementationClass = "com.klarna.gradle.reactnative.GradleReactNativePlugin"
         }
     }

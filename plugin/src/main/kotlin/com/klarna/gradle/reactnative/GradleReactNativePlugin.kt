@@ -6,7 +6,8 @@ package com.klarna.gradle.reactnative
 import org.gradle.api.Project
 import org.gradle.api.Plugin
 
-const val EXTENSION = "react"
+const val PLUGIN_EXTENSION = "react"
+const val PLUGIN_NAME_ID = "com.klarna.gradle.reactnative"
 
 /** React Native Gradle Build Plugin. */
 open class GradleReactNativePlugin : Plugin<Project> {
@@ -14,11 +15,13 @@ open class GradleReactNativePlugin : Plugin<Project> {
         // Register extensions and forward project instance to it as parameter
         project.extensions.create(EXTENSION, ReactNativeExtension::class.java, project)
 
-        // Register a task
-        project.tasks.register("greeting") { task ->
-            task.doLast {
-                println("Hello from plugin 'com.klarna.gradle.reactnative.greeting'")
-            }
-        }
+        // register tasks
+        project.tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
+        project.tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
+    }
+
+    companion object {
+        const val PLUGIN = PLUGIN_NAME_ID
+        const val EXTENSION = PLUGIN_EXTENSION
     }
 }

@@ -8,9 +8,7 @@ import org.gradle.testkit.runner.GradleRunner
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/**
- * A simple functional test for the 'com.klarna.gradle.reactnative.greeting' plugin.
- */
+/** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
     @Test
     fun `can run task`() {
@@ -20,7 +18,7 @@ class GradleReactNativePluginFunctionalTest {
         projectDir.resolve("settings.gradle").writeText("")
         projectDir.resolve("build.gradle").writeText("""
             plugins {
-                id('com.klarna.gradle.reactnative.greeting')
+                id('${GradleReactNativePlugin.PLUGIN}')
             }
         """.trimIndent())
 
@@ -29,13 +27,11 @@ class GradleReactNativePluginFunctionalTest {
                 .forwardOutput()
                 .withPluginClasspath()
                 .withProjectDir(projectDir)
-                .withArguments("greeting")
+                .withArguments(CompileRnBundleTask.NAME)
                 .build()
 
         // Verify the result
-        assertTrue(result.output.contains(
-                "Hello from plugin 'com.klarna.gradle.reactnative.greeting'"
-        ))
+        assertTrue(result.output.contains(CompileRnBundleTask.DUMMY))
     }
 
     @Test
@@ -46,7 +42,7 @@ class GradleReactNativePluginFunctionalTest {
         projectDir.resolve("settings.gradle").writeText("")
         projectDir.resolve("build.gradle").writeText("""
             plugins {
-                id('com.klarna.gradle.reactnative.greeting')
+                id('${GradleReactNativePlugin.PLUGIN}')
             }
             react {
                root "../.."
@@ -60,12 +56,10 @@ class GradleReactNativePluginFunctionalTest {
                 .forwardOutput()
                 .withPluginClasspath()
                 .withProjectDir(projectDir)
-                .withArguments("greeting")
+                .withArguments(CompileRnBundleTask.NAME)
                 .build()
 
         // Verify the result
-        assertTrue(result.output.contains(
-                "Hello from plugin 'com.klarna.gradle.reactnative.greeting'"
-        ))
+        assertTrue(result.output.contains(CompileRnBundleTask.DUMMY))
     }
 }

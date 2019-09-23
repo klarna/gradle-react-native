@@ -8,16 +8,30 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 
 /**
- * A simple unit test for the 'com.klarna.gradle.reactnative.greeting' plugin.
+ * A simple unit test for the 'com.klarna.gradle.reactnative.buildJsBundle' plugin.
  */
 class GradleReactNativePluginTest {
     @Test
-    fun `plugin registers task`() {
-        // Create a test project and apply the plugin
+    fun `plugin registers task compileRnBundle`() {
+        // Given
         val project = ProjectBuilder.builder().build()
-        project.plugins.apply("com.klarna.gradle.reactnative.greeting")
 
-        // Verify the result
-        assertNotNull(project.tasks.findByName("greeting"))
+        // When
+        project.plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+        // Then
+        assertNotNull(project.tasks.findByName(CompileRnBundleTask.NAME))
+    }
+
+    @Test
+    fun `plugin register task copyJsBundle`() {
+        // Given
+        val project = ProjectBuilder.builder().build()
+
+        // When
+        project.plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+        // Then
+        assertNotNull(project.tasks.findByName(CopyRnBundleTask.NAME))
     }
 }
