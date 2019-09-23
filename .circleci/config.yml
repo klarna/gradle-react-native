@@ -10,11 +10,16 @@ references:
     environment:
       JVM_OPTS: -Xmx3g
   # Filter by version tag: "1.0 .. 1.0.0.1-something"
-  filters: &version_filters
+  version: &version_filters
     tags: # 1.0 ... 1.0.1.1
       only: /^[0-9]+(\.[0-9]+).*/
     branches:
       ignore: /.*/
+  # Filter by MASTER
+  master: &master_filters
+    branches:
+      only:
+        - master
 
 ## Global environment
 environment:
@@ -45,18 +50,42 @@ commands:
             - sample-build-{{ .Revision }}
   checksum_sources:
     steps:
+      # https://discuss.circleci.com/t/caching-based-on-the-checksum-of-a-directorys-contents/28748
       - run:
           name: Calculate the checksums
           command: |
-            # https://discuss.circleci.com/t/caching-based-on-the-checksum-of-a-directorys-contents/28748
             # https://unix.stackexchange.com/questions/102191/find-with-multiple-name-and-exec-executes-only-the-last-matches-of-nam
             cp /dev/null CACHE_HASH
             ## echo $(find ./plugin/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
             ## echo $(find ./sample/ReactNativePlugin/android/app/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
-            ## echo $(find . -type f -not -path "*/node_modules/*" -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+            ## echo $(find . -type f -not -path "*/node_modules/*" \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" \) -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
             echo $(git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/" | xargs md5sum 2>/dev/null) >>CACHE_HASH
             # calculate final cache hash
             ## echo $(cat CACHE_HASH | md5sum | cut -d' ' -f1) >CACHE_HASH
+  checksum_gradle:
+    steps:
+      # https://stackoverflow.com/questions/4210042/how-to-exclude-a-directory-in-find-command
+      - run:
+          name: Calculate the checksum for gradle project
+          command: |
+            cp /dev/null CACHE_HASH
+            # all dependencies are declare in *.gradle, *.gradle.kts & gradle.properties files
+            echo $(find . -type f \
+              -not -path "*/node_modules/*" \
+              \( \
+                -name "*.gradle" \
+                -o -name "*.gradle.kts" \
+                -o -name "gradle.properties" \
+              \) \
+              -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+            # all RN dependencies are declared in package.json & yarn.lock file
+            echo $(find . -type f \
+              -not -path "*/node_modules/*" \
+               \( \
+                -name "package.json" \
+                -o -name "yarn.lock" \
+              \) \
+              -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
   git-list-ignored-files:
     steps:
       - run:
@@ -197,7 +226,7 @@ jobs:
           name: Run Lint
           command: ./gradlew lint
       - store_artifacts:
-          path: sample/build/reports
+          path: sample/ReactNativePlugin/android/app/build/reports
           destination: reports
 
   ## Deploy
@@ -228,23 +257,17 @@ workflows:
       - lint:
           requires:
             - debug
-  warmup_cache_weekly: # keep our cache always warm
+  warmup_cache_daily: # keep our cache always warm
     jobs:
       - dependencies
     triggers:
       - schedule: # https://crontab.guru/#0_0_*_*_* - every day
           cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
+          filters: *master_filters
   build_test_deploy:
     jobs:
       - dependencies:
-          filters:
-            branches:
-              only:
-                - master
+          filters: *master_filters
       - debug:
           requires:
             - dependencies
