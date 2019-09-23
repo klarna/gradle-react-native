@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 
 /** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
-    var projectDir: File = File("/");
+    var projectDir: File = File("/")
 
     @BeforeTest
     fun initializeDirectory() {
@@ -86,6 +86,5 @@ class GradleReactNativePluginFunctionalTest {
                entryFile "index.android.js"
             }
         """.trimIndent())
-
     }
 }

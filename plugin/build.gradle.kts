@@ -1,6 +1,7 @@
 /* Gradle React Native Plugin */
 
 import org.gradle.api.artifacts.Configuration
+
 /*
     NOTES:
         `version` - injectede from `gradle.properties` of the root project
@@ -48,6 +49,9 @@ tasks {
 // Add a source set for the functional test suite
 val functionalTestSourceSet = sourceSets.create("functionalTest") {
     /* ... */
+    java {
+        setSrcDirs(listOf("src/main/kotlin"))
+    }
 }
 
 gradlePlugin {

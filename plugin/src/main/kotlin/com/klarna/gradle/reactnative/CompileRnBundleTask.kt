@@ -9,7 +9,9 @@ const val COMPILE_RN_BUNDLE_TASK_NAME = "compileRnBundle"
 open class CompileRnBundleTask
 @Inject constructor(project: Project) : CommonRnTask() {
     init {
-        description = "Compile JavaScript Bundle for '${project.name}', configuration: '<undefined>'"
+        description = """
+            Compile JavaScript Bundle for '${project.name}', configuration: '<undefined>'
+        """.trimIndent()
     }
 
     @TaskAction
@@ -18,7 +20,7 @@ open class CompileRnBundleTask
     }
 
     companion object {
-        const val NAME = COMPILE_RN_BUNDLE_TASK_NAME;
-        const val DUMMY = "Hello from plugin 'com.klarna.gradle.reactnative'";
+        const val NAME = COMPILE_RN_BUNDLE_TASK_NAME
+        const val DUMMY = "Hello from plugin 'com.klarna.gradle.reactnative'"
     }
 }
