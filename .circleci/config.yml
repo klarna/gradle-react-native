@@ -196,7 +196,7 @@ jobs:
           command: bash gradle/version-up.sh
       - run: # tests
           name: Run unit tests
-          command: ./gradlew test jacocoTestReport
+          command: ./gradlew :plugin:functionalTest :plugin:test jacocoTestReport
       - run: # collect results
           name: Save test results
           command: |
@@ -205,7 +205,8 @@ jobs:
           when: always
       - run: # upload coverage
           name: Upload code coverage results
-          commnd: bash <(curl -s https://codecov.io/bash)
+          command: |
+            bash <(curl -s https://codecov.io/bash)
       - store_test_results:
           path: ~/test-results
       - store_test_results:

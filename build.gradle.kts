@@ -101,6 +101,13 @@ subprojects {
             xml.isEnabled = true
         }
     }
+
+    tasks.withType<Test>() {
+        testLogging {
+            showStandardStreams = true
+            events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+        }
+    }
 }
 
 dependencies {

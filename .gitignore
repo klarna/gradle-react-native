@@ -1,3 +1,9 @@
+# IntelliJ
+.idea/caches/
+
+# force IDE to resolve dependencies
+.idea/libraries/
+
 # Ignore Gradle project-specific cache directory
 .gradle/
 
