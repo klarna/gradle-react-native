@@ -1,7 +1,5 @@
 /* Gradle React Native Plugin */
 
-import org.gradle.api.artifacts.Configuration
-
 /*
     NOTES:
         `version` - injectede from `gradle.properties` of the root project
@@ -25,7 +23,17 @@ dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
 
     // Use the Kotlin JDK 8 standard library.
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation(kotlin("stdlib-jdk8"))
+
+    // register APIs for gradle plugin
+    compileOnly(gradleApi())
+    compileOnly(gradleKotlinDsl())
+
+    // https://developer.android.com/studio/releases/gradle-plugin
+    compileOnly("com.android.tools.build:gradle:3.4.2")
+
+    /* required for proper class finding in functional Tests */
+    runtimeOnly("com.android.tools.build:gradle:3.4.2")
 
     // https://docs.gradle.org/current/userguide/test_kit.html
     testImplementation(gradleTestKit())
@@ -35,6 +43,10 @@ dependencies {
 
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+
+    testImplementation("com.android.tools.build:gradle:3.4.2")
+    testImplementation(gradleApi())
+    testImplementation(gradleKotlinDsl())
 }
 
 tasks {
@@ -66,13 +78,32 @@ gradlePlugin {
     testSourceSets(functionalTestSourceSet)
 }
 
-var configurationTestImpl: Configuration = configurations.getByName("testImplementation")
-configurations.getByName("functionalTestImplementation").extendsFrom(configurationTestImpl)
+pluginBundle {
+    website = "https://github.com/klarna/gradle-react-native"
+    vcsUrl = "https://github.com/klarna/gradle-react-native"
+    description = "Gradle React Native applications build plugin"
+
+    (plugins) {
+        "reactnative" {
+            displayName = "ReactNative build plugin"
+            tags = listOf("gradle", "plugin", "reactnative")
+        }
+    }
+}
+
+configurations {
+    "functionalTestImplementation" {
+        extendsFrom(getByName("testImplementation"))
+    }
+}
+
+// var configurationTestImpl: Configuration = configurations.getByName("testImplementation")
+// configurations.getByName("functionalTestImplementation").extendsFrom(configurationTestImpl)
 
 // Add a task to run the functional tests
 val functionalTest by tasks.creating(Test::class) {
     testClassesDirs = functionalTestSourceSet.output.classesDirs
-    classpath = functionalTestSourceSet.runtimeClasspath
+    classpath += functionalTestSourceSet.runtimeClasspath
 }
 
 // Run the functional tests as part of `check`

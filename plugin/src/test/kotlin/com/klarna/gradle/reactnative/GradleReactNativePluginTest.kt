@@ -8,9 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-/**
- * A simple unit test for the 'com.klarna.gradle.reactnative.buildJsBundle' plugin.
- */
+/** Unit tests. */
 class GradleReactNativePluginTest {
     @Test
     fun `plugin registers task compileRnBundle`() {
@@ -46,9 +44,35 @@ class GradleReactNativePluginTest {
 
         // Then
         val actual: ReactNativeExtension? = project.extensions
-            .findByName(GradleReactNativePlugin.EXTENSION) as ReactNativeExtension?
+            .findByName(ReactNativeExtension.EXTENSION) as ReactNativeExtension?
 
         assertNotNull(actual)
         assertEquals("../../", actual.root)
+        assertEquals("index.android.bundle", actual.bundleAssetName)
+        assertEquals("index.android.js", actual.entryFile)
+        assertEquals("ram-bundle", actual.bundleCommand)
+    }
+
+    @Test
+    fun `plugin nested extensions, buildTypes`() {
+        // Given
+        val project = ProjectBuilder.builder().build()
+
+        // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+        project.plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+        val ext = project.extensions.getByName(ReactNativeExtension.EXTENSION)
+            as? ReactNativeExtension
+
+        assertNotNull(ext)
+        assertNotNull(ext.buildTypes)
+//        assertEquals(2, ext.buildTypes.size)
+
+        // composed build types that correspond android project
+        ext.buildTypes.forEach {
+            assertNotNull(it.name)
+            println(it.name)
+        }
     }
 }

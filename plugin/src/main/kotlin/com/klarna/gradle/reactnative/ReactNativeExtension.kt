@@ -1,7 +1,10 @@
 package com.klarna.gradle.reactnative
 
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
+
+const val EXTENSION_ROOT_NAME = "react"
 
 /**
  * <pre>
@@ -16,19 +19,25 @@ import org.gradle.api.logging.LogLevel
  *     }
  * </pre>
  * @see <a href="https://docs.gradle.org/current/userguide/custom_plugins.html">Custom Plugins</a>
+ * @see <a href="https://www.oreilly.com/library/view/gradle-beyond-the/9781449373801/ch02.html">Beyond the Basics</a>
  * */
 open class ReactNativeExtension(project: Project) {
-    var root: String? = "../../"
-    var bundleAssetName: String? = "index.android.bundle"
-    var entryFile: String? = "index.android.js"
+    open var root: String? = "../../"
+    open var bundleAssetName: String? = "index.android.bundle"
+    open var entryFile: String? = "index.android.js"
+    open var bundleCommand: String? = "ram-bundle"
 
-    var bundleCommand: String? = "ram-bundle"
-    var bundleInDebug: Boolean = false
-    var bundleInRelease: Boolean = true
-
-    var enableHermes: Boolean = false
+    open var buildTypes: NamedDomainObjectContainer<BuildTypes> =
+        project.container(BuildTypes::class.java)
 
     init {
-        project.logger.log(LogLevel.DEBUG, "Extension registered to ${project.name}")
+        with(project) {
+            logger.log(LogLevel.DEBUG, "'react' extension registered to ${project.name}")
+            logger.info("registered container: $buildTypes")
+        }
+    }
+
+    companion object {
+        const val EXTENSION = EXTENSION_ROOT_NAME
     }
 }

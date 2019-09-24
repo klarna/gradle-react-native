@@ -3,25 +3,66 @@
  */
 package com.klarna.gradle.reactnative
 
-import org.gradle.api.Project
+import com.android.build.gradle.AppExtension
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 
-const val PLUGIN_EXTENSION = "react"
 const val PLUGIN_NAME_ID = "com.klarna.gradle.reactnative"
 
-/** React Native Gradle Build Plugin. */
+/** React Native Gradle Build Plugin.
+ *
+ * @see <a href="https://github.com/leleliu008/BintrayUploadGradlePlugin">Bintray Upload Plugin<a>
+ * */
 open class GradleReactNativePlugin : Plugin<Project> {
+    /** Register extensions and tasks for provided project. */
     override fun apply(project: Project) {
-        // Register extensions and forward project instance to it as parameter
-        project.extensions.create(EXTENSION, ReactNativeExtension::class.java, project)
+        with(project) {
+            // Create the NamedDomainObjectContainers
 
-        // register tasks
-        project.tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
-        project.tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
+            // Register extensions and forward project instance to it as parameter
+            extensions.create(ReactNativeExtension.EXTENSION,
+                ReactNativeExtension::class.java,
+                project)
+
+            // register tasks
+            tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
+            tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
+        }
+
+        project.afterEvaluate(this::afterProjectEvaluate)
+//        project.gradle.addListener(this)
+    }
+
+    /** Extract plugin configuration. */
+    private fun getConfiguration(project: Project) =
+        project.extensions.getByType(ReactNativeExtension::class.java)
+
+    /** After project evaluation all plugins and extensions are applied and its right time
+     * for attaching/configure plugin internals. */
+    private fun afterProjectEvaluate(project: Project) {
+        val configuration = getConfiguration(project)
+
+        project.logger.log(LogLevel.INFO, "configuration extracted: $configuration")
+
+        // extract android plugin extension
+        val android = project.extensions.findByName("android") as? AppExtension
+        project.logger.log(LogLevel.INFO, "android configuration: ${android ?: "<none>"}")
+        if (null == android) {
+            throw GradleException(
+                "Android application build plug-in not found. Expected: '$ANDROID_APP_PLUGIN'")
+        }
+
+        android.buildTypes?.forEach {
+            project.logger.log(LogLevel.INFO, "android build types: ${it.name}")
+
+            configuration.buildTypes.create(it.name) { bt -> bt.name = it.name }
+        }
     }
 
     companion object {
         const val PLUGIN = PLUGIN_NAME_ID
-        const val EXTENSION = PLUGIN_EXTENSION
+        const val ANDROID_APP_PLUGIN = "com.android.application"
     }
 }

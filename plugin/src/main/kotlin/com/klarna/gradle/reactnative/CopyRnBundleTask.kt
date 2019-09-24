@@ -2,11 +2,13 @@ package com.klarna.gradle.reactnative
 
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.TaskAction
 import javax.inject.Inject
 
 const val COPY_JS_BUNDLE_TASK: String = "copyJsBundle"
 
+@CacheableTask
 open class CopyRnBundleTask
 @Inject constructor(project: Project) : CommonRnTask() {
 

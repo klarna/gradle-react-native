@@ -9,22 +9,78 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
+const val DOLLAR = "\$"
+/** @see <a href="https://docs.gradle.org/current/userguide/kotlin_dsl.html#sec:plugins_resolution_strategy">Plugin resolution strategy<a> */
+const val ANDROID_PLUGIN = """
+pluginManagement {
+    repositories {
+        google()
+        gradlePluginPortal()
+    }
+    resolutionStrategy {
+        eachPlugin {
+            if(requested.id.namespace == "com.android") {
+                useModule("com.android.tools.build:gradle:$DOLLAR{requested.version}")
+            }
+        }
+    }
+}    
+"""
+const val GRADLE_DEPENDENCIES = """
+buildscript {
+    repositories {
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.0'
+    }
+}
+"""
+const val GRADLE_PLUGINS = """
+plugins {
+    id('${GradleReactNativePlugin.ANDROID_APP_PLUGIN}') version "3.5.0"
+    id('${GradleReactNativePlugin.PLUGIN}')
+}
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+    defaultConfig {
+        applicationId "dummy.myapplication"
+        minSdkVersion 19
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+"""
+
 /** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
-    var projectDir: File = File("/")
+    private val projectDir: File = File("build/functionalTest")
 
     @BeforeTest
     fun initializeDirectory() {
-        projectDir = File("build/functionalTest")
         projectDir.mkdirs()
 
         // make empty files
-        projectDir.resolve("settings.gradle").writeText("")
+        projectDir.resolve("settings.gradle").writeText("$ANDROID_PLUGIN")
         projectDir.resolve("build.gradle").writeText("")
+
+        // runtime jacoco attaching
+        val jacocoRuntime: File = File("")
+        projectDir.resolve("gradle.properties").writeText("""
+            # org.gradle.jvmargs=-javaagent:${jacocoRuntime.absolutePath}=destfile=${projectDir.absolutePath}/jacoco/test.exec
+        """.trimIndent())
     }
 
     @Test
-    fun `can run task`() {
+    fun `fail on no android app plugin`() {
         // Setup the test build
         projectDir.resolve("build.gradle").writeText("""
             plugins {
@@ -34,11 +90,32 @@ class GradleReactNativePluginFunctionalTest {
 
         // Run the build
         val result = GradleRunner.create()
-                .forwardOutput()
-                .withPluginClasspath()
-                .withProjectDir(projectDir)
-                .withArguments(CompileRnBundleTask.NAME)
-                .build()
+            .forwardOutput()
+            .withPluginClasspath()
+            .withProjectDir(projectDir)
+            .withArguments(CompileRnBundleTask.NAME)
+            .buildAndFail()
+
+        assertTrue(result.output.contains("Android application build plug-in not found"))
+    }
+
+    @Test
+    fun `can run task`() {
+        // Setup the test build
+        projectDir.resolve("build.gradle").writeText("""
+            $GRADLE_DEPENDENCIES
+            $GRADLE_PLUGINS
+        """.trimIndent())
+
+        // Run the build
+        val result = GradleRunner.create()
+            .forwardOutput()
+            .withPluginClasspath()
+            .withProjectDir(projectDir)
+            .withArguments(CompileRnBundleTask.NAME)
+//            .withArguments("--info")
+//            .withArguments("--stacktrace")
+            .build()
 
         // Verify the result
         assertTrue(result.output.contains(CompileRnBundleTask.DUMMY))
@@ -48,9 +125,8 @@ class GradleReactNativePluginFunctionalTest {
     fun `can configure extension`() {
         // Setup the test build
         projectDir.resolve("build.gradle").writeText("""
-            plugins {
-                id('${GradleReactNativePlugin.PLUGIN}')
-            }
+            $GRADLE_DEPENDENCIES
+            $GRADLE_PLUGINS
             react {
                root "../.."
                bundleAssetName "index.android.bundle"
@@ -60,11 +136,11 @@ class GradleReactNativePluginFunctionalTest {
 
         // Run the build
         val result = GradleRunner.create()
-                .forwardOutput()
-                .withPluginClasspath()
-                .withProjectDir(projectDir)
-                .withArguments(CompileRnBundleTask.NAME)
-                .build()
+            .forwardOutput()
+            .withPluginClasspath()
+            .withProjectDir(projectDir)
+            .withArguments(CompileRnBundleTask.NAME)
+            .build()
 
         // Verify the result
         assertTrue(result.output.contains(CompileRnBundleTask.DUMMY))
@@ -74,12 +150,8 @@ class GradleReactNativePluginFunctionalTest {
     fun `welcome to android plugin`() {
         // Setup the test build
         projectDir.resolve("build.gradle").writeText("""
-            plugins {
-                id 'com.android.application'
-                id 'kotlin-android'
-                id "org.jetbrains.kotlin.kapt" version "1.3.50"
-                id('${GradleReactNativePlugin.PLUGIN}')
-            }
+            $GRADLE_DEPENDENCIES
+            $GRADLE_PLUGINS
             react {
                root "../.."
                bundleAssetName "index.android.bundle"
