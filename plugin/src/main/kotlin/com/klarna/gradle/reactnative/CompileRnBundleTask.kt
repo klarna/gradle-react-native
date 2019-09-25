@@ -23,6 +23,6 @@ open class CompileRnBundleTask
 
     companion object {
         const val NAME = COMPILE_RN_BUNDLE_TASK_NAME
-        const val DUMMY = "Hello from plugin 'com.klarna.gradle.reactnative', task: CompileRnBundleTask"
+        const val DUMMY = "Plugin 'com.klarna.gradle.reactnative', task: CompileRnBundleTask"
     }
 }

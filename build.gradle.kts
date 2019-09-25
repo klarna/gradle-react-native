@@ -165,8 +165,12 @@ val jacocoMerge by tasks.registering(JacocoMerge::class) {
 val jacocoRootReport by tasks.registering(JacocoReport::class) {
     dependsOn(jacocoMerge)
 
-    sourceDirectories.from(files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs }))
-    classDirectories.from(files(subprojects.map { it.the<SourceSetContainer>()["main"].output }))
+    sourceDirectories.from(files(subprojects.map {
+        it.the<SourceSetContainer>()["main"].allSource.srcDirs
+    }))
+    classDirectories.from(files(subprojects.map {
+        it.the<SourceSetContainer>()["main"].output
+    }))
     executionData(jacocoMerge.get().destinationFile)
 
     reports {

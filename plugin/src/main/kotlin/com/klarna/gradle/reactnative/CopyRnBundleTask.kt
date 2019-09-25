@@ -24,6 +24,6 @@ open class CopyRnBundleTask
 
     companion object {
         const val NAME = COPY_JS_BUNDLE_TASK
-        const val DUMMY = "Hello from plugin 'com.klarna.gradle.reactnative', task: CopyRnBundleTask"
+        const val DUMMY = "Plugin 'com.klarna.gradle.reactnative', task: CopyRnBundleTask"
     }
 }

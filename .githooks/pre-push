@@ -10,7 +10,7 @@ echo "Running static analysis..."
 pwd
 
 # Validate Kotlin code with detekt
-./gradlew -q detekt --no-daemon
+./gradlew -q detekt ktlintCheck --no-daemon
 
 status=$?
 
