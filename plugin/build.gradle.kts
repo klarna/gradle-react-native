@@ -101,11 +101,17 @@ configurations {
 val functionalTest by tasks.creating(Test::class) {
     testClassesDirs = functionalTestSourceSet.output.classesDirs
     classpath += functionalTestSourceSet.runtimeClasspath
+
+//    outputs.dir(file("$buildDir/jacoco/functionalTest"))
+    outputs.file(file("$buildDir/jacoco/functionalTest.exec"))
 }
 
 /* compose functional tests report */
 val jacocoFunctionalTestReport by tasks.registering(JacocoReport::class) {
     dependsOn(functionalTest)
+
+    setOnlyIf { functionalTest.enabled }
+    outputs.upToDateWhen { false } // force 'always run' mode
 
     sourceDirectories.from(files(functionalTestSourceSet.allSource.srcDirs))
 
@@ -117,7 +123,10 @@ val jacocoFunctionalTestReport by tasks.registering(JacocoReport::class) {
         file("$buildDir/jacoco").walk()
             .filter { it.name.endsWith(".exec") }
             .filter { it.absolutePath.contains("functionalTest") }
-            .forEach { executionData(it) }
+            .forEach {
+                executionData(it)
+                println("~> $it")
+            }
     }
 
     reports {
