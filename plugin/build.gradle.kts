@@ -102,7 +102,7 @@ val functionalTest by tasks.creating(Test::class) {
     testClassesDirs = functionalTestSourceSet.output.classesDirs
     classpath += functionalTestSourceSet.runtimeClasspath
 
-//    outputs.dir(file("$buildDir/jacoco/functionalTest"))
+    outputs.dir(file("$buildDir/jacoco/functionalTest"))
     outputs.file(file("$buildDir/jacoco/functionalTest.exec"))
 }
 
@@ -125,7 +125,7 @@ val jacocoFunctionalTestReport by tasks.registering(JacocoReport::class) {
             .filter { it.absolutePath.contains("functionalTest") }
             .forEach {
                 executionData(it)
-                println("~> $it")
+                logger.info("~> $it")
             }
     }
 

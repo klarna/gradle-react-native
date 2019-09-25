@@ -142,9 +142,11 @@ arrayOf("debug", "release").forEach { buildType ->
 }
 
 /* Join dependencies of the composed porject with plugin project. ct*/
-tasks.findByName("dependencies")?.dependsOn(
-    gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
-)
+tasks.named("dependencies") {
+    dependsOn(
+        gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
+    )
+}
 
 /* Create `lint` tasks that triggers plugin lint in debug mode. */
 tasks.register("lint") {
@@ -156,6 +158,15 @@ val jacocoMerge by tasks.registering(JacocoMerge::class) {
     subprojects {
         dependsOn(tasks.withType<JacocoReport>())
         executionData(tasks.withType<JacocoReport>().map { it.executionData })
+    }
+
+    outputs.upToDateWhen { false } // force 'always run' mode
+
+    // attach all *.exec files from functional tests
+    doFirst {
+        file("${rootProject.rootDir}").walk()
+            .filter { it.name.endsWith(".exec") }
+            .forEach { executionData(it) }
     }
 
     destinationFile = file("$buildDir/jacoco")
