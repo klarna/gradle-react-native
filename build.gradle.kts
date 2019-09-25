@@ -1,10 +1,12 @@
 /* React Native Build Gradle Plugin */
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.testing.jacoco.tasks.JacocoMerge
 import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
-/** Default repositories for plugin search */
+/* Default repositories for plugin search */
 buildscript {
     repositories {
         gradlePluginPortal()
@@ -38,6 +40,7 @@ plugins {
     jacoco
 }
 
+/* Inject repositories and global variables. */
 allprojects {
     ext {
         set("buildToolsVersion", "29.0.2")
@@ -50,7 +53,10 @@ allprojects {
         google()
         jcenter()
     }
+}
 
+/* Apply gradle plugins */
+allprojects {
     //region ktlint
     // We want to apply ktlint at all project level because it also checks build gradle files
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
@@ -63,8 +69,8 @@ allprojects {
         verbose.set(true)
         android.set(true)
         reporters.set(setOf(
-                ReporterType.CHECKSTYLE,
-                ReporterType.JSON
+            ReporterType.CHECKSTYLE,
+            ReporterType.JSON
         ))
 
         additionalEditorconfigFile.set(file(".editorconfig"))
@@ -81,70 +87,97 @@ allprojects {
     //endregion
 }
 
+/* Apply plugins and configurations for subprojets. */
 subprojects {
     //region detekt
     apply(plugin = "io.gitlab.arturbosch.detekt")
+
     detekt {
         config = files("${project.rootDir}/.circleci/detekt.yml")
         parallel = true
     }
     //endregion
 
+    //region JaCoCo
     apply(plugin = "jacoco")
     jacoco {
         toolVersion = "0.8.4"
         reportsDir = file("$buildDir/reports/jacoco")
     }
 
+    /* Force XML reports and make execution dependency to a test tasks. */
     tasks.withType<JacocoReport>() {
         reports {
             xml.isEnabled = true
         }
+
+        dependsOn(tasks.withType<Test>())
     }
 
+    /* Print status of unit test in terminal */
     tasks.withType<Test>() {
         testLogging {
             showStandardStreams = true
             events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
         }
     }
+    //endregion
 }
 
+/* Make the root project archives configuration depend on every subproject */
 dependencies {
-    // Make the root project archives configuration depend on every subproject
     subprojects.forEach { archives(it) }
 }
 
 //region High level tasks
 /* Introduce high-level build tasks: assembleDebug && assembleRelease */
+val samplePrj = gradle.includedBuild("ReactNativePlugin")
 arrayOf("debug", "release").forEach { buildType ->
     arrayOf("").forEach { flavor ->
         val bf = "${flavor.capitalize()}${buildType.capitalize()}"
         tasks.register("assemble$bf") {
-            dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:assemble$bf"))
+            dependsOn(samplePrj.task(":app:assemble$bf"))
         }
     }
 }
 
 /* Join dependencies of the composed porject with plugin project. ct*/
 tasks.findByName("dependencies")?.dependsOn(
-        gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
+    gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
 )
+
+/* Create `lint` tasks that triggers plugin lint in debug mode. */
 tasks.register("lint") {
     dependsOn(gradle.includedBuild("ReactNativePlugin").task(":app:lintDebug"))
 }
-tasks.jacocoTestReport {
-    dependsOn(":plugin:test")
+
+/* Merge results of multiple subprojects */
+val jacocoMerge by tasks.registering(JacocoMerge::class) {
+    subprojects {
+        dependsOn(tasks.withType<JacocoReport>())
+        executionData(tasks.withType<JacocoReport>().map { it.executionData })
+    }
+
+    destinationFile = file("$buildDir/jacoco")
 }
-tasks.withType<Test> {
-    useJUnitPlatform()
-    testLogging {
-        events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+
+/* Create consolidate JaCoCo report */
+val jacocoRootReport by tasks.registering(JacocoReport::class) {
+    dependsOn(jacocoMerge)
+
+    sourceDirectories.from(files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs }))
+    classDirectories.from(files(subprojects.map { it.the<SourceSetContainer>()["main"].output }))
+    executionData(jacocoMerge.get().destinationFile)
+
+    reports {
+        html.isEnabled = true
+        xml.isEnabled = true
+        csv.isEnabled = false
     }
 }
 //endregion
 
-/** Always use ALL distribution not BINARY only. */
+/* Always use ALL distribution not BINARY only. */
 tasks.wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
@@ -189,4 +222,5 @@ tasks.withType<DependencyUpdatesTask> {
 /**
  * References:
  * https://github.com/gradle/kotlin-dsl-samples/blob/master/samples/multi-kotlin-project/
+ * https://github.com/bakdata/dedupe/blob/master/build.gradle.kts
  * */

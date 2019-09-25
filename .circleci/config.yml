@@ -196,11 +196,14 @@ jobs:
           command: bash gradle/version-up.sh
       - run: # tests
           name: Run unit tests
-          command: ./gradlew :plugin:functionalTest :plugin:test jacocoTestReport
+          command: |
+              rm -rf build/reports
+              rm -rf plugin/build/jacoco
+              ./gradlew jacocoRootReport
       - run: # collect results
           name: Save test results
           command: |
-            mkdir -p ~/test-results/junit/
+            mkdir -p ~/rm test-results/junit/
             find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
           when: always
       - run: # upload coverage
@@ -209,13 +212,12 @@ jobs:
             bash <(curl -s https://codecov.io/bash)
       - store_test_results:
           path: ~/test-results
-      - store_test_results:
-          path: sample/build/test-results
       - store_artifacts:
-          path: sample/build/reports
-          destination: reports
+          path: build/reports/jacoco/jacocoRootReport
+          destination: reports/jacoco
       - store_artifacts:
           path: ~/test-results/junit
+          destination: junit
 
   ## Lint
   lint:

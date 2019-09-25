@@ -18,10 +18,12 @@ open class CopyRnBundleTask
 
     @TaskAction
     fun doAction() {
+        println(DUMMY)
         project.logger.log(LogLevel.DEBUG, "Copy task executed for project: ${project.name}")
     }
 
     companion object {
         const val NAME = COPY_JS_BUNDLE_TASK
+        const val DUMMY = "Hello from plugin 'com.klarna.gradle.reactnative', task: CopyRnBundleTask"
     }
 }

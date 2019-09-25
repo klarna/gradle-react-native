@@ -30,10 +30,10 @@ dependencies {
     compileOnly(gradleKotlinDsl())
 
     // https://developer.android.com/studio/releases/gradle-plugin
-    compileOnly("com.android.tools.build:gradle:3.4.2")
+    compileOnly("com.android.tools.build:gradle:3.5.0")
 
     /* required for proper class finding in functional Tests */
-    runtimeOnly("com.android.tools.build:gradle:3.4.2")
+    runtimeOnly("com.android.tools.build:gradle:3.5.0")
 
     // https://docs.gradle.org/current/userguide/test_kit.html
     testImplementation(gradleTestKit())
@@ -44,7 +44,7 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
-    testImplementation("com.android.tools.build:gradle:3.4.2")
+    testImplementation("com.android.tools.build:gradle:3.5.0")
     testImplementation(gradleApi())
     testImplementation(gradleKotlinDsl())
 }
@@ -60,7 +60,7 @@ tasks {
 
 // Add a source set for the functional test suite
 val functionalTestSourceSet = sourceSets.create("functionalTest") {
-    /* ... */
+    /* Include source code of the plugin */
     java {
         setSrcDirs(listOf("src/main/kotlin"))
     }
@@ -97,16 +97,37 @@ configurations {
     }
 }
 
-// var configurationTestImpl: Configuration = configurations.getByName("testImplementation")
-// configurations.getByName("functionalTestImplementation").extendsFrom(configurationTestImpl)
-
-// Add a task to run the functional tests
+/* Add a task to run the functional tests */
 val functionalTest by tasks.creating(Test::class) {
     testClassesDirs = functionalTestSourceSet.output.classesDirs
     classpath += functionalTestSourceSet.runtimeClasspath
 }
 
-// Run the functional tests as part of `check`
+/* compose functional tests report */
+val jacocoFunctionalTestReport by tasks.registering(JacocoReport::class) {
+    dependsOn(functionalTest)
+
+    sourceDirectories.from(files(functionalTestSourceSet.allSource.srcDirs))
+
+    // Functional tests `.withPluginClasspath()` injects `build/classes/kotlin/main` binaries
+    classDirectories.from(files(sourceSets["main"].output))
+
+    // attach all *.exec files from functional tests
+    doFirst {
+        file("$buildDir/jacoco").walk()
+            .filter { it.name.endsWith(".exec") }
+            .filter { it.absolutePath.contains("functionalTest") }
+            .forEach { executionData(it) }
+    }
+
+    reports {
+        html.isEnabled = true
+        xml.isEnabled = true
+        csv.isEnabled = false
+    }
+}
+
+/* Run the functional tests as part of `check` */
 val check by tasks.getting(Task::class) {
     dependsOn(functionalTest)
 }
@@ -118,4 +139,5 @@ val check by tasks.getting(Task::class) {
  * User Manual available at https://docs.gradle.org/5.6.2/userguide/custom_plugins.html
  * https://guides.gradle.org/testing-gradle-plugins/
  * https://docs.gradle.org/current/userguide/test_kit.html
+ * https://gist.github.com/aalmiray/e6f54aa4b3803be0bcac
  * */

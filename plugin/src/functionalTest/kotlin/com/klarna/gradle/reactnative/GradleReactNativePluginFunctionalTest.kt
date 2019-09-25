@@ -5,6 +5,8 @@ package com.klarna.gradle.reactnative
 
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
+import org.junit.Rule
+import org.junit.rules.TestName
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -26,6 +28,7 @@ pluginManagement {
     }
 }    
 """
+/** Gradle build script dependencies needed for android projects. */
 const val GRADLE_DEPENDENCIES = """
 buildscript {
     repositories {
@@ -36,12 +39,8 @@ buildscript {
     }
 }
 """
-const val GRADLE_PLUGINS = """
-plugins {
-    id('${GradleReactNativePlugin.ANDROID_APP_PLUGIN}') version "3.5.0"
-    id('${GradleReactNativePlugin.PLUGIN}')
-}
-
+/** Minimal Android app configuration section */
+const val ANDROID_SECTION = """
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
@@ -57,12 +56,26 @@ android {
             minifyEnabled false
         }
     }
+} 
+"""
+/** Gradle default build configuration. */
+const val GRADLE_PLUGINS = """
+plugins {
+    id('${GradleReactNativePlugin.ANDROID_APP_PLUGIN}') version "3.5.0"
+    id('${GradleReactNativePlugin.PLUGIN}')
 }
+
+$ANDROID_SECTION
 """
 
 /** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
     private val projectDir: File = File("build/functionalTest")
+    private val jacocoDir: File = File("build/jacoco/functionalTest")
+
+    @Rule
+    @JvmField
+    public val testName: TestName = TestName()
 
     @BeforeTest
     fun initializeDirectory() {
@@ -73,9 +86,13 @@ class GradleReactNativePluginFunctionalTest {
         projectDir.resolve("build.gradle").writeText("")
 
         // runtime jacoco attaching
-        val jacocoRuntime: File = File("")
+        val expandedDir = "build/tmp/expandedArchives"
+        val jacocoVer = "org.jacoco.agent-0.8.4.jar_982888894296538c98d7324f3ca78d8f"
+        val jacocoRuntime: File = File("$expandedDir/$jacocoVer/jacocoagent.jar")
+        val testName = testName.methodName.replace(' ', '_').replace('\'', '_')
         projectDir.resolve("gradle.properties").writeText("""
-            # org.gradle.jvmargs=-javaagent:${jacocoRuntime.absolutePath}=destfile=${projectDir.absolutePath}/jacoco/test.exec
+            # method=${this.testName.methodName}
+            org.gradle.jvmargs=-javaagent:${jacocoRuntime.absolutePath}=destfile=${jacocoDir.absolutePath}/$testName.exec
         """.trimIndent())
     }
 
@@ -100,7 +117,7 @@ class GradleReactNativePluginFunctionalTest {
     }
 
     @Test
-    fun `can run task`() {
+    fun `can run compile task`() {
         // Setup the test build
         projectDir.resolve("build.gradle").writeText("""
             $GRADLE_DEPENDENCIES
@@ -113,12 +130,30 @@ class GradleReactNativePluginFunctionalTest {
             .withPluginClasspath()
             .withProjectDir(projectDir)
             .withArguments(CompileRnBundleTask.NAME)
-//            .withArguments("--info")
-//            .withArguments("--stacktrace")
             .build()
 
         // Verify the result
         assertTrue(result.output.contains(CompileRnBundleTask.DUMMY))
+    }
+
+    @Test
+    fun `can run copy task`() {
+        // Setup the test build
+        projectDir.resolve("build.gradle").writeText("""
+            $GRADLE_DEPENDENCIES
+            $GRADLE_PLUGINS
+        """.trimIndent())
+
+        // Run the build
+        val result = GradleRunner.create()
+            .forwardOutput()
+            .withPluginClasspath()
+            .withProjectDir(projectDir)
+            .withArguments(CopyRnBundleTask.NAME)
+            .build()
+
+        // Verify the result
+        assertTrue(result.output.contains(CopyRnBundleTask.DUMMY))
     }
 
     @Test
