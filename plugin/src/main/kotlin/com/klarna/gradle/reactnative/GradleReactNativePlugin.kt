@@ -8,6 +8,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import com.klarna.gradle.reactnative.ReactNativeExtension as RnConfig
 
+/** Unique plugin name. */
 const val PLUGIN_NAME_ID = "com.klarna.gradle.reactnative"
 
 /** React Native Gradle Build Plugin.
@@ -90,13 +91,21 @@ open class GradleReactNativePlugin : Plugin<Project> {
 
     /** Helpers. */
     companion object {
+        /** Plugin name, ID. */
         const val PLUGIN = PLUGIN_NAME_ID
+        /** Dependent android plugin name. */
         const val ANDROID_APP_PLUGIN = "com.android.application"
 
+        /** Exception. Raised when plugin cannot find any android plugin attached to the project. */
         const val EXCEPTION_NO_ANDROID_PLUGIN = "Expected android application plugin"
+        /** Exception. Raised when we have bad buildTypes configuration. Should never happens. */
         const val EXCEPTION_NO_BUILD_TYPES = "Badly initialized build types"
+        /** Exception. Raised when android section and react sections are not in sync to each
+         * other in `productFlavors` sub-section. */
         const val EXCEPTION_OUT_OF_SYNC_FLAVORS =
             "`android` and `react` `productFlavors` configurations should be in sync"
+        /** Exception. Raised when android section and react sections are not in sync to each
+         * other in `buildTypes` sub-section. */
         const val EXCEPTION_OUT_OF_SYNC_BUILDS =
             "`android` and `react` `buildTypes` configurations should be in sync"
     }

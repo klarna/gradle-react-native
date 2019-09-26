@@ -9,6 +9,43 @@
 
 ## Contribute
 
+### Publishing
+
+Do login:
+
+```bash
+./gradlew login
+```
+Output:
+```text
+# Task ':login' is not up-to-date because:
+#  Task has not declared any outputs despite executing actions.
+#
+# To add your publishing API keys to /usr/local/opt/gradle/gradle.properties, open the following URL in your browser:
+#
+#   https://plugins.gradle.org/api/v1/login/auth/{token}
+#
+# Your publishing API keys have been written to: $GRADLE_USER_HOME/gradle.properties
+```
+
+Copy `gradle.publish.key` and `gradle.publish.secret` keys:
+```bash
+cat $GRADLE_HOME/gradle.properties
+```
+
+```text
+#Updated secret and key with server message: Using key 'C02WW29ZHTDD' for OlKu
+#Thu, 26 Sep 2019 09:41:39 +0200
+gradle.publish.key={secret}
+gradle.publish.secret={secret2}
+```
+
+Create file in root of the project `credentials.properties` and place those keys into it.
+
+```bash
+./gradlew publishPlugins
+```
+
 ### Run CircleCI locally
 
 based on: <https://circleci.com/docs/2.0/local-cli/>

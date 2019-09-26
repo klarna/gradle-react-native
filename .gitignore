@@ -21,3 +21,6 @@ version.properties
 
 # CircliCI hash
 CACHE_HASH*
+
+# Publishing credentials
+credentials.properties

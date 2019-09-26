@@ -1,5 +1,7 @@
 /* Gradle React Native Plugin */
 
+import org.jetbrains.dokka.gradle.DokkaTask
+
 /*
     NOTES:
         `version` - injectede from `gradle.properties` of the root project
@@ -11,6 +13,7 @@ plugins {
 
     id("java-gradle-plugin")
     id("com.gradle.plugin-publish")
+    id("org.jetbrains.dokka") apply true
 }
 
 repositories {
@@ -116,7 +119,7 @@ val jacocoFunctionalTestReport by tasks.registering(JacocoReport::class) {
     sourceDirectories.from(files(functionalTestSourceSet.allSource.srcDirs))
 
     // Functional tests `.withPluginClasspath()` injects `build/classes/kotlin/main` binaries
-    classDirectories.from(files(sourceSets["main"].output))
+    classDirectories.from(files(sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].output))
 
     // attach all *.exec files from functional tests
     doFirst {
@@ -140,6 +143,64 @@ val jacocoFunctionalTestReport by tasks.registering(JacocoReport::class) {
 val check by tasks.getting(Task::class) {
     dependsOn(functionalTest)
 }
+
+val dokka by tasks.getting(DokkaTask::class) {
+    outputFormat = "html"
+    outputDirectory = "$buildDir/javadoc"
+}
+
+val javadoc by tasks.getting(Javadoc::class) {
+    setEnabled(false)
+
+    options {
+        (this as StandardJavadocDocletOptions).apply {
+            if (JavaVersion.current().isJava9Compatible) {
+                addBooleanOption("html5", true)
+            }
+
+            addBooleanOption("-allow-script-in-comments", true)
+            addStringOption("Xdoclint:none", "-quiet")
+
+            locale = "en"
+            encoding = "UTF-8"
+            charSet = "UTF-8"
+            header(
+                """
+                <script src=\"http://cdn.jsdelivr.net/highlight.js/8.6/highlight.min.js\"></script>
+                """.trimIndent()
+            )
+            footer(
+                """
+                <script type=\"text/javascript\">\nhljs.initHighlightingOnLoad();\n</script>
+                """.trimIndent()
+            )
+
+            tags("")
+        }
+    }
+
+    setSource(sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].allSource)
+}
+
+val javadocJar by tasks.registering(Jar::class) {
+    group = "documentation"
+
+    dependsOn(dokka)
+
+    archiveClassifier.set("javadoc")
+//    from(tasks.javadoc.get().destinationDir)
+    from(dokka.outputDirectory)
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    description = "Creates a jar of java sources, classified -sources"
+    archiveClassifier.set("sources")
+
+    from(sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].allSource)
+}
+
+artifacts.add("archives", javadocJar)
+artifacts.add("archives", sourcesJar)
 
 /**
  * References:

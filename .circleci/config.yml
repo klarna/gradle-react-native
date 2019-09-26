@@ -271,6 +271,23 @@ jobs:
           path: plugin/build/reports/detekt
           destination: reports/detekt
 
+  ## Dokka
+  dokka:
+    <<: *android_container
+    steps:
+      - checkout
+      - checksum_sources
+      - restore_dependencies_cache
+      - run: # version
+          name: Version Autogenerate
+          command: bash gradle/version-up.sh
+      - run: # lint
+          name: Run Lint
+          command: ./gradlew dokka
+      - store_artifacts:
+          path: plugin/build/javadoc
+          destination: reports/javadoc
+
   ## Deploy
   deploy:
     <<: *android_container
@@ -305,6 +322,9 @@ workflows:
       - lint:
           requires:
             - dependencies
+      - dokka:
+          requires:
+            - dependencies
   warmup_cache_daily: # keep our cache always warm
     jobs:
       - dependencies
@@ -331,6 +351,9 @@ workflows:
       - detekt:
           requires:
             - debug
+      - dokka:
+          requires:
+            - debug
       - test:
           requires:
             - debug
@@ -341,6 +364,7 @@ workflows:
             - lint
             - ktlint
             - detekt
+            - dokka
             - release
       - deploy:
           requires:

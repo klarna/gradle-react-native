@@ -5,6 +5,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.testing.jacoco.tasks.JacocoMerge
 import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+import java.io.File
+import java.util.Properties
 
 /* Default repositories for plugin search */
 buildscript {
@@ -38,11 +40,26 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
 
     jacoco
+
+    /* https://github.com/Kotlin/dokka */
+    id("org.jetbrains.dokka") version "0.9.18" apply false
 }
+
+/* Properties loader. */
+fun readProperties(file: File) = Properties().apply { file.inputStream().use { load(it) } }
 
 /* Inject repositories and global variables. */
 allprojects {
     ext {
+        /* Load credentials neede for plugin publishing. */
+        val credentials = readProperties(File(project.rootDir, "credentials.properties"))
+        credentials.forEach { key, value -> set("$key", value) }
+        if (credentials.size == 0) {
+            logger.warn(
+                "`credentials.properties` file is empty or not found. You cannot publish plugin"
+            )
+        }
+
         set("buildToolsVersion", "29.0.2")
         set("minSdkVersion", 16)
         set("compileSdkVersion", 29)
@@ -68,10 +85,12 @@ allprojects {
 
         verbose.set(true)
         android.set(true)
-        reporters.set(setOf(
-            ReporterType.CHECKSTYLE,
-            ReporterType.JSON
-        ))
+        reporters.set(
+            setOf(
+                ReporterType.CHECKSTYLE,
+                ReporterType.JSON
+            )
+        )
 
         additionalEditorconfigFile.set(file(".editorconfig"))
         // Unsupported now by current version of the plugin.
@@ -177,10 +196,10 @@ val jacocoRootReport by tasks.registering(JacocoReport::class) {
     dependsOn(jacocoMerge)
 
     sourceDirectories.from(files(subprojects.map {
-        it.the<SourceSetContainer>()["main"].allSource.srcDirs
+        it.the<SourceSetContainer>()[SourceSet.MAIN_SOURCE_SET_NAME].allSource.srcDirs
     }))
     classDirectories.from(files(subprojects.map {
-        it.the<SourceSetContainer>()["main"].output
+        it.the<SourceSetContainer>()[SourceSet.MAIN_SOURCE_SET_NAME].output
     }))
     executionData(jacocoMerge.get().destinationFile)
 
@@ -238,4 +257,5 @@ tasks.withType<DependencyUpdatesTask> {
  * References:
  * https://github.com/gradle/kotlin-dsl-samples/blob/master/samples/multi-kotlin-project/
  * https://github.com/bakdata/dedupe/blob/master/build.gradle.kts
+ * https://github.com/gradle/gradle/blob/master/buildSrc/build.gradle.kts
  * */
