@@ -46,19 +46,23 @@ plugins {
 }
 
 /* Properties loader. */
-fun readProperties(file: File) = Properties().apply { file.inputStream().use { load(it) } }
+fun readProperties(file: File) = Properties().apply {
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+/* Load credentials neede for plugin publishing. */
+val credentials = readProperties(File(project.rootDir, "credentials.properties"))
+if (credentials.size == 0) {
+    logger.warn(
+        "WARNING: " +
+            "`credentials.properties` file is empty or not found. " +
+            "You will not be able to publish plugin to gradle plugins public repository."
+    )
+}
 
 /* Inject repositories and global variables. */
 allprojects {
     ext {
-        /* Load credentials neede for plugin publishing. */
-        val credentials = readProperties(File(project.rootDir, "credentials.properties"))
         credentials.forEach { key, value -> set("$key", value) }
-        if (credentials.size == 0) {
-            logger.warn(
-                "`credentials.properties` file is empty or not found. You cannot publish plugin"
-            )
-        }
 
         set("buildToolsVersion", "29.0.2")
         set("minSdkVersion", 16)
