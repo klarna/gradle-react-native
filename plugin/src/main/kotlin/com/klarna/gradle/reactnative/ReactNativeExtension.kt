@@ -5,20 +5,28 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
+import java.io.Serializable
+import javax.inject.Inject
 
 /** Plugin root extension name. */
 const val EXTENSION_ROOT_NAME = "react"
 
 /**
+ * React Native Plugin extension.
  * <pre>
  *     react {
  *       root "../.."
  *       bundleAssetName "index.android.bundle"
  *       entryFile "index.android.js"
  *       bundleCommand "ram-bundle"
- *       bundleInDebug false
- *       bundleInRelease true
  *       enableHermes false
+ *
+ *       inputExcludes = ["android", "ios"]
+ *       nodeExecutableAndArgs = ["node"]
+ *       extraPackagerArgs = []
+ *
+ *       buildTypes { /*...*/ }
+ *       productFlavors { /* ... */ }
  *     }
  * </pre>
  * @see <a href="https://docs.gradle.org/current/userguide/custom_plugins.html">Custom Plugins</a>
@@ -28,9 +36,10 @@ const val EXTENSION_ROOT_NAME = "react"
  * @property project reference on attached project
  *
  * */
-open class ReactNativeExtension(project: Project) {
+open class ReactNativeExtension
+@Inject constructor(open val project: Project) : Serializable {
     /** Root path to the React Native project folder. Folder where we have `node_modules` used
-     * in android binary. */
+     * in android binary (i.e. where "package.json" lives). */
     open var root: String? = "../../"
     /** JavaScript bundle name used when we inject bundle into android assets. */
     open var bundleAssetName: String? = "index.android.bundle"
@@ -63,6 +72,8 @@ open class ReactNativeExtension(project: Project) {
         buildTypes.create(name, configuration)
 
     companion object {
+        /** Serialization UID. */
+        const val serialVersionUID = 1L
         /** Extension name. */
         const val EXTENSION = EXTENSION_ROOT_NAME
     }

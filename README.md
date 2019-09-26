@@ -2,10 +2,68 @@
 
 [![CircleCI](https://circleci.com/gh/klarna/gradle-react-native.svg?style=svg)](https://circleci.com/gh/klarna/gradle-react-native)
 [![codecov](https://codecov.io/gh/klarna/gradle-react-native/branch/master/graph/badge.svg)](https://codecov.io/gh/klarna/gradle-react-native)
+[![gradlePluginPortal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/com/github/klarna/gradle-react-native/com.klarna.gradle.reactnative.gradle.plugin/maven-metadata.xml.svg?label=gradlePluginPortal)](https://plugins.gradle.org/plugin/com.klarna.gradle.reactnative)
+
 
 ## Setup
 
+Gradle's [kotlin-dsl][kotlin_dsl]:
+
+```groovy
+// build.gradle.kts
+plugins {
+    id "com.klarna.gradle.reactnative" version "$version" apply false
+}
+```
+
+```groovy
+// project build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("com.klarna.gradle.reactnative")
+}
+```
+
+Or via the `buildscript` block:
+
+```groovy
+// rootProject build.gradle
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "com.klarna.gradle.reactnative:plugin:$version"
+    }
+}
+```
+
+```groovy
+// project build.gradle
+apply plugin: "com.android.application"
+apply plugin: "com.klarna.gradle.reactnative"
+```
+
 ## Usage
+
+```groovy
+// project build.gradle
+apply plugin: "com.android.application"
+apply plugin: "com.klarna.gradle.reactnative"
+
+android {
+    /* ... Configuration of the Android app ... */
+}
+
+react {
+    buildTypes {
+        // ...
+    }
+    productFlavors {
+        // ...
+    }
+}
+```
 
 ## Contribute
 
@@ -70,3 +128,5 @@ brew uninstall circleci
 
 * <https://www.klg71.de/post/kotlin_gradle_plugin/>
 * <https://github.com/FRI-DAY/elasticmq-gradle-plugin>
+
+[kotlin_dsl]: https://github.com/gradle/kotlin-dsl
