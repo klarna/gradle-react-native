@@ -126,6 +126,7 @@ jobs:
       - save_cache: # gradle dependencies
           paths:
             - ~/.gradle
+            - ~/.m2
           key: gradle-cache-{{ checksum "CACHE_HASH" }}
       - save_cache: # yarn dependencies
           paths:

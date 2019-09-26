@@ -3,12 +3,22 @@
  */
 package com.klarna.gradle.reactnative
 
+import com.android.build.gradle.AppExtension
+import org.gradle.api.ProjectConfigurationException
+import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.kotlin.dsl.configure
 import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import com.klarna.gradle.reactnative.ReactNativeExtension as RNConfig
+import com.klarna.gradle.reactnative.ReactNativeExtension.Companion.EXTENSION as EXTENSION_REACT
 
-/** Unit tests. */
+/** Unit tests.
+ *
+ * @see <a href="https://github.com/piotrmadry/FirebaseTestLab-Android/tree/master/plugin/src/test/java/com/appunite/firebasetestlabplugin">Tests</a>
+ * @see <a href="https://github.com/airbnb/okreplay/tree/master/okreplay-gradle-plugin/src/test/kotlin/okreplay">AirBNB okReplay</a>
+ * */
 class GradleReactNativePluginTest {
     @Test
     fun `plugin registers task compileRnBundle`() {
@@ -43,8 +53,8 @@ class GradleReactNativePluginTest {
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
-        val actual: ReactNativeExtension? = project.extensions
-            .findByName(ReactNativeExtension.EXTENSION) as ReactNativeExtension?
+        val actual: RNConfig? = project.extensions
+            .findByName(EXTENSION_REACT) as RNConfig?
 
         assertNotNull(actual)
         assertEquals("../../", actual.root)
@@ -62,8 +72,8 @@ class GradleReactNativePluginTest {
         project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
-        val ext = project.extensions.getByName(ReactNativeExtension.EXTENSION)
-            as? ReactNativeExtension
+        val ext = project.extensions.getByName(EXTENSION_REACT)
+            as? RNConfig
 
         assertNotNull(ext)
         assertNotNull(ext.buildTypes)
@@ -73,6 +83,201 @@ class GradleReactNativePluginTest {
         ext.buildTypes.forEach {
             assertNotNull(it.name)
             println(it.name)
+        }
+    }
+
+    @Test(expected = ProjectConfigurationException::class)
+    fun `buildTypes configurations are not in sync`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                // release, debug, staging
+                buildTypes.apply {
+                    create("staging")
+                }
+            }
+
+            configure<RNConfig> {
+                buildTypes.apply {
+                    create("debug").apply {
+                        bundleIn = false
+                    }
+                    create("unknown").apply {
+                        bundleIn = true
+                        enableHermes = false
+                    }
+                }
+            }
+        }
+
+        // then
+        (project as ProjectInternal).evaluate()
+
+        // when
+        /*
+        android {
+            ...
+            buildTypes {
+                debug { ... }
+                release { ... }
+                staging { ... }
+            }
+        }
+        react {
+            buildTypes {
+                unknown {} // <- this one is wrong
+                debug { ... }
+            }
+        }
+        */
+    }
+
+    @Test(expected = ProjectConfigurationException::class)
+    fun `productFlavors configurations are not in sync`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                // local, yellow, release
+                flavorDimensions("dummy")
+                productFlavors.apply {
+                    create("local").apply {}
+                    create("yellow").apply {}
+                    create("pink").apply {}
+                }
+            }
+
+            configure<RNConfig> {
+                productFlavors.apply {
+                    create("legacy").apply {
+                        bundleIn = true
+                        enableHermes = true
+                    }
+                    create("pink").apply {
+                        enableHermes = true
+                    }
+                }
+            }
+        }
+
+        // force evaluation of the gradle project
+        (project as ProjectInternal).evaluate()
+
+        /*
+        android {
+            ...
+            productFlavors {
+                local { ... }
+                yellow { ... }
+                pink { ... }
+            }
+        }
+        react {
+            productFlavors {
+                legacy { ... }   // <- this one is wrong
+                pink { ... }
+            }
+        }
+        * */
+    }
+
+    @Test
+    fun `full configuration`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                // release, debug, staging
+                buildTypes.apply {
+                    create("staging")
+                }
+
+                // local, yellow, release
+                flavorDimensions("dummy")
+                productFlavors.apply {
+                    create("local").apply {}
+                    create("yellow").apply {}
+                    create("pink").apply {}
+                }
+            }
+
+            configure<RNConfig> {
+                buildTypes.apply {
+                    create("debug").apply {
+                        bundleIn = false
+                    }
+                }
+                productFlavors.apply {
+                    create("pink").apply {
+                        enableHermes = true
+                    }
+                }
+            }
+        }
+
+        // force evaluation of the gradle project
+        (project as ProjectInternal).evaluate()
+
+        val react = project.extensions.getByName(EXTENSION_REACT) as RNConfig
+        assertNotNull(react)
+
+        with(react) {
+            assertEquals(3, buildTypes.size, "expected: release, debug, staging")
+            assertEquals(3, productFlavors.size, "expected: local, yellow, pink")
+
+            assertNotNull(buildTypes.findByName("debug"))
+            assertNotNull(buildTypes.findByName("release"))
+            assertNotNull(buildTypes.findByName("staging"))
+
+            assertNotNull(productFlavors.findByName("local"))
+            assertNotNull(productFlavors.findByName("yellow"))
+            assertNotNull(productFlavors.findByName("pink"))
         }
     }
 }

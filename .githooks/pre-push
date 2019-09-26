@@ -3,7 +3,7 @@ command -v git-lfs >/dev/null 2>&1 || { echo >&2 "\nThis repository is configure
 git lfs pre-push "$@"
 
 # Uncomment next line for DEBUG
-#set -x
+set -x
 
 echo "Running static analysis..."
 

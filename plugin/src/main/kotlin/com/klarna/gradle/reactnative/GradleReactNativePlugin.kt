@@ -4,10 +4,9 @@
 package com.klarna.gradle.reactnative
 
 import com.android.build.gradle.AppExtension
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.logging.LogLevel
+import com.klarna.gradle.reactnative.ReactNativeExtension as RnConfig
 
 const val PLUGIN_NAME_ID = "com.klarna.gradle.reactnative"
 
@@ -22,47 +21,83 @@ open class GradleReactNativePlugin : Plugin<Project> {
             // Create the NamedDomainObjectContainers
 
             // Register extensions and forward project instance to it as parameter
-            extensions.create(ReactNativeExtension.EXTENSION,
-                ReactNativeExtension::class.java,
-                project)
+            extensions.create(RnConfig.EXTENSION, RnConfig::class.java, project)
 
             // register tasks
             tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
             tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
         }
 
+        // callbacks
         project.afterEvaluate(this::afterProjectEvaluate)
-//        project.gradle.addListener(this)
+        project.gradle.addListener(this)
     }
 
     /** Extract plugin configuration. */
     private fun getConfiguration(project: Project) =
-        project.extensions.getByType(ReactNativeExtension::class.java)
+        project.extensions.getByType(RnConfig::class.java)
 
     /** After project evaluation all plugins and extensions are applied and its right time
      * for attaching/configure plugin internals. */
     private fun afterProjectEvaluate(project: Project) {
-        val configuration = getConfiguration(project)
-
-        project.logger.log(LogLevel.INFO, "configuration extracted: $configuration")
+        val react = getConfiguration(project)
+        project.logger.info("configuration extracted: $react")
 
         // extract android plugin extension
         val android = project.extensions.findByName("android") as? AppExtension
-        project.logger.log(LogLevel.INFO, "android configuration: ${android ?: "<none>"}")
-        if (null == android) {
-            throw GradleException(
-                "Android application build plug-in not found. Expected: '$ANDROID_APP_PLUGIN'")
+        checkNotNull(android) { EXCEPTION_NO_ANDROID_PLUGIN }
+        checkNotNull(android.buildTypes) { EXCEPTION_NO_BUILD_TYPES }
+        check(android.buildTypes.size != 0) { EXCEPTION_NO_BUILD_TYPES }
+
+        // synchronize build types and flavors
+        synchronizeBuildTypes(project, android, react)
+        synchronizeProductFlavors(project, android, react)
+    }
+
+    /** For each android.productFlavor create/use corresponding react.productFlavor configuration */
+    private fun synchronizeProductFlavors(
+        project: Project,
+        android: AppExtension,
+        react: RnConfig
+    ) {
+        // create corresponding flavors
+        android.productFlavors.forEach {
+            project.logger.info("android product flavors: ${it.name}")
+
+            react.productFlavors.maybeCreate(it.name).apply {
+                this.project = project
+            }
         }
-
-        android.buildTypes?.forEach {
-            project.logger.log(LogLevel.INFO, "android build types: ${it.name}")
-
-            configuration.buildTypes.create(it.name) { bt -> bt.name = it.name }
+        check(android.productFlavors.size == react.productFlavors.size) {
+            EXCEPTION_OUT_OF_SYNC_FLAVORS
         }
     }
 
+    /** For each android.buildType create/use corresponding react.buildType configuration */
+    private fun synchronizeBuildTypes(project: Project, android: AppExtension, react: RnConfig) {
+        // create corresponding build types
+        android.buildTypes.forEach {
+            project.logger.info("android build types: ${it.name}")
+
+            react.buildTypes.maybeCreate(it.name).apply {
+                this.project = project
+            }
+        }
+        check(android.buildTypes.size == react.buildTypes.size) {
+            EXCEPTION_OUT_OF_SYNC_BUILDS
+        }
+    }
+
+    /** Helpers. */
     companion object {
         const val PLUGIN = PLUGIN_NAME_ID
         const val ANDROID_APP_PLUGIN = "com.android.application"
+
+        const val EXCEPTION_NO_ANDROID_PLUGIN = "Expected android application plugin"
+        const val EXCEPTION_NO_BUILD_TYPES = "Badly initialized build types"
+        const val EXCEPTION_OUT_OF_SYNC_FLAVORS =
+            "`android` and `react` `productFlavors` configurations should be in sync"
+        const val EXCEPTION_OUT_OF_SYNC_BUILDS =
+            "`android` and `react` `buildTypes` configurations should be in sync"
     }
 }

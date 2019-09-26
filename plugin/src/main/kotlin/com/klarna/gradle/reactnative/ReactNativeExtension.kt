@@ -1,5 +1,7 @@
 package com.klarna.gradle.reactnative
 
+import groovy.lang.Closure
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -30,12 +32,22 @@ open class ReactNativeExtension(project: Project) {
     open var buildTypes: NamedDomainObjectContainer<BuildTypes> =
         project.container(BuildTypes::class.java)
 
+    open var productFlavors: NamedDomainObjectContainer<FlavorTypes> =
+        project.container(FlavorTypes::class.java)
+
     init {
         with(project) {
             logger.log(LogLevel.DEBUG, "'react' extension registered to ${project.name}")
             logger.info("registered container: $buildTypes")
+            logger.info("registered container: $productFlavors")
         }
     }
+
+    fun buildTypes(name: String, configuration: Closure<BuildTypes>): BuildTypes =
+        buildTypes.create(name, configuration)
+
+    fun buildTypes(name: String, configuration: Action<BuildTypes>): BuildTypes =
+        buildTypes.create(name, configuration)
 
     companion object {
         const val EXTENSION = EXTENSION_ROOT_NAME

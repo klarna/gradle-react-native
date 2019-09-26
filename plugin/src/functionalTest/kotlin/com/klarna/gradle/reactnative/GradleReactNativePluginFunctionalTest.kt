@@ -113,7 +113,7 @@ class GradleReactNativePluginFunctionalTest {
             .withArguments(CompileRnBundleTask.NAME)
             .buildAndFail()
 
-        assertTrue(result.output.contains("Android application build plug-in not found"))
+        assertTrue(result.output.contains(GradleReactNativePlugin.EXCEPTION_NO_ANDROID_PLUGIN))
     }
 
     @Test
@@ -182,16 +182,34 @@ class GradleReactNativePluginFunctionalTest {
     }
 
     @Test
-    fun `welcome to android plugin`() {
+    fun `welcome to react native plugin`() {
         // Setup the test build
         projectDir.resolve("build.gradle").writeText("""
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
             react {
-               root "../.."
-               bundleAssetName "index.android.bundle"
-               entryFile "index.android.js"
+                root "$projectDir"
+                bundleAssetName "index.bundle"
+                entryFile "index.js"
+               
+                /* 
+                buildTypes {
+                    debug {
+                        enableHermes = true
+                    }
+                    release {
+                        bundleIn = true
+                    }
+                } //*/
             }
         """.trimIndent())
+
+        // Run the build
+        val result = GradleRunner.create()
+            .forwardOutput()
+            .withPluginClasspath()
+            .withProjectDir(projectDir)
+            .withArguments(CompileRnBundleTask.NAME)
+            .build()
     }
 }
