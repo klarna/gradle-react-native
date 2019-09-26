@@ -46,6 +46,18 @@ apply plugin: "com.klarna.gradle.reactnative"
 
 ## Usage
 
+
+### Minimalistic
+
+```groovy
+// project build.gradle
+apply plugin: "com.android.application"
+apply plugin: "com.klarna.gradle.reactnative"
+```
+
+After applying plugin all tasks will be created automatically and attached to the build graph.
+
+### Extended
 ```groovy
 // project build.gradle
 apply plugin: "com.android.application"
@@ -57,10 +69,12 @@ android {
 
 react {
     buildTypes {
-        // ...
-    }
-    productFlavors {
-        // ...
+        debug {
+            /* ... */
+        }
+        release {
+            /* ... */
+        }
     }
 }
 ```
@@ -104,6 +118,10 @@ Create file in root of the project `credentials.properties` and place those keys
 ./gradlew publishPlugins
 ```
 
+References:
+* [publishing overview](https://docs.gradle.org/current/userguide/publishing_overview.html)
+* [gradle plugin portal](https://guides.gradle.org/publishing-plugins-to-gradle-plugin-portal/)
+
 ### Run CircleCI locally
 
 based on: <https://circleci.com/docs/2.0/local-cli/>
@@ -123,6 +141,35 @@ circleci local execute --job test -e TEST_START=2 -e TEST_TOTAL=4
 # cleanup
 brew uninstall circleci
 ```
+
+### Snapshots development
+
+If you want to use the latest development SNAPSHOT version on a regular basis, you will need to also need to add the following to the `buildscript` block to ensure Gradle checks more frequently for updates:
+
+```groovy
+buildscript {
+  // ...
+  /* Since the files in the repository change with each build, we need to recheck for changes */
+  configurations.all {
+    resolutionStrategy {
+      cacheChangingModulesFor 0, 'seconds'
+      cacheDynamicVersionsFor 0, 'seconds'
+    }
+  }
+}
+
+// `-SNAPSHOT` suffix automatically recognized as `changing` dependency 
+dependencies {
+    compile group: "groupId", name: "artifactId", version: "1+", changing: true    
+    compile group: "groupId", name: "artifactId", version: "1.0-SNAPSHOT"
+}
+```
+
+References:
+
+* [Resolution Strategy](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.ResolutionStrategy.html)
+* [Snapshots configuration](https://stackoverflow.com/questions/42058626/how-to-get-newest-snapshot-of-a-dependency-without-changing-version-in-gradle?rq=1)
+* [other plugin](https://github.com/bndtools/bnd/blob/master/biz.aQute.bnd.gradle/README.md#using-the-latest-development-snapshot-build-of-the-bnd-gradle-plugins)
 
 ## References:
 
