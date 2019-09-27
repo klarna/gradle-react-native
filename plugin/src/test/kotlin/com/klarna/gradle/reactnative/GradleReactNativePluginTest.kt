@@ -213,7 +213,7 @@ class GradleReactNativePluginTest {
     }
 
     @Test
-    fun `full configuration`() {
+    fun `flavors matrix full configuration`() {
         val project = ProjectBuilder.builder().build()
 
         // given
@@ -280,4 +280,9 @@ class GradleReactNativePluginTest {
             assertNotNull(productFlavors.findByName("pink"))
         }
     }
+
+//    @Test
+//    fun ``(){
+//
+//    }
 }

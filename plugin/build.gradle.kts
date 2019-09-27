@@ -1,6 +1,7 @@
 /* Gradle React Native Plugin */
 
 import org.jetbrains.dokka.gradle.DokkaTask
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 /*
     NOTES:
@@ -10,10 +11,11 @@ import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     kotlin("jvm")
-
+    // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
     id("java-gradle-plugin")
     id("com.gradle.plugin-publish")
-    id("org.jetbrains.dokka") apply true
+    id("org.jetbrains.dokka")
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 repositories {
@@ -69,6 +71,7 @@ val functionalTestSourceSet = sourceSets.create("functionalTest") {
     }
 }
 
+//region Publishing
 gradlePlugin {
     // Define the plugin
     plugins {
@@ -93,7 +96,9 @@ pluginBundle {
         }
     }
 }
+//endregion
 
+//region Functional Tests
 configurations {
     "functionalTestImplementation" {
         extendsFrom(getByName("testImplementation"))
@@ -107,6 +112,8 @@ val functionalTest by tasks.creating(Test::class) {
 
     outputs.dir(file("$buildDir/jacoco/functionalTest"))
     outputs.file(file("$buildDir/jacoco/functionalTest.exec"))
+
+    ignoreFailures = true
 }
 
 /* compose functional tests report */
@@ -201,6 +208,35 @@ val sourcesJar by tasks.registering(Jar::class) {
 
 artifacts.add("archives", javadocJar)
 artifacts.add("archives", sourcesJar)
+//endregion
+
+//region Quality tools
+// Ktlint configuration for sub-projects
+ktlint {
+    /* https://github.com/pinterest/ktlint */
+    version.set("0.34.2")
+
+    verbose.set(true)
+    android.set(true)
+    reporters.set(
+        setOf(
+            ReporterType.CHECKSTYLE,
+            ReporterType.JSON
+        )
+    )
+
+    additionalEditorconfigFile.set(file(".editorconfig"))
+    // Unsupported now by current version of the plugin.
+    // disabledRules should be placed into .editconfig file temporary
+//        disabledRules.set(setOf(
+//                "import-ordering"
+//        ))
+
+    filter {
+        exclude { element -> element.file.path.contains("generated/") }
+    }
+}
+//endregion
 
 /**
  * References:

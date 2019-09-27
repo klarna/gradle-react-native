@@ -1,11 +1,6 @@
 /* React Native Build Gradle Plugin */
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.testing.jacoco.tasks.JacocoMerge
-import org.gradle.testing.jacoco.tasks.JacocoReport
-import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
-import java.io.File
 import java.util.Properties
 
 /* Default repositories for plugin search */
@@ -24,32 +19,32 @@ plugins {
 
     kotlin("jvm") version "1.3.50" apply false
 
-    // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
-    id("java-gradle-plugin")
+    // Root Project shoud behave as a java library
+    id("java-library")
 
     /* https://plugins.gradle.org/plugin/io.gitlab.arturbosch.detekt */
     id("io.gitlab.arturbosch.detekt") version "1.0.1"
 
     /* https://plugins.gradle.org/plugin/com.gradle.plugin-publish */
-    id("com.gradle.plugin-publish") version "0.10.1"
+    id("com.gradle.plugin-publish") version "0.10.1" apply false
 
     /* https://github.com/ben-manes/gradle-versions-plugin */
     id("com.github.ben-manes.versions") version "0.25.0"
 
     /* https://github.com/JLLeitschuh/ktlint-gradle */
-    id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
-
-    jacoco
+    id("org.jlleitschuh.gradle.ktlint") version "8.2.0" apply false
 
     /* https://github.com/Kotlin/dokka */
     id("org.jetbrains.dokka") version "0.9.18" apply false
+
+    jacoco
 }
 
 /* Properties loader. */
 fun readProperties(file: File) = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
-/* Load credentials neede for plugin publishing. */
+/* Load credentials needed for plugin publishing. */
 val credentials = readProperties(File(project.rootDir, "credentials.properties"))
 if (credentials.size == 0) {
     logger.warn(
@@ -80,37 +75,12 @@ allprojects {
 allprojects {
     //region ktlint
     // We want to apply ktlint at all project level because it also checks build gradle files
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+//    apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
-    // Ktlint configuration for sub-projects
-    ktlint {
-        /* https://github.com/pinterest/ktlint */
-        version.set("0.34.2")
-
-        verbose.set(true)
-        android.set(true)
-        reporters.set(
-            setOf(
-                ReporterType.CHECKSTYLE,
-                ReporterType.JSON
-            )
-        )
-
-        additionalEditorconfigFile.set(file(".editorconfig"))
-        // Unsupported now by current version of the plugin.
-        // diabledRules should be placed into .editconfig file temporary
-//        disabledRules.set(setOf(
-//                "import-ordering"
-//        ))
-
-        filter {
-            exclude { element -> element.file.path.contains("generated/") }
-        }
-    }
     //endregion
 }
 
-/* Apply plugins and configurations for subprojets. */
+/* Apply plugins and configurations for sub-projects. */
 subprojects {
     //region detekt
     apply(plugin = "io.gitlab.arturbosch.detekt")
@@ -147,7 +117,7 @@ subprojects {
     //endregion
 }
 
-/* Make the root project archives configuration depend on every subproject */
+/* Make the root project archives configuration depend on every sub-project */
 dependencies {
     subprojects.forEach { archives(it) }
 }

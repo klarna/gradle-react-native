@@ -2,404 +2,420 @@ version: 2.1
 
 ## Reusable YML aliases
 references:
-  # Android Container API 29
-  container_config: &android_container
-    working_directory: ~/gradle-react-native
-    docker: # https://circleci.com/docs/2.0/circleci-images/#android
-      - image: circleci/android:api-29-node
-    environment:
-      JVM_OPTS: -Xmx3g
-  # Filter by version tag: "1.0 .. 1.0.0.1-something"
-  version: &version_filters
-    tags: # 1.0 ... 1.0.1.1
-      only: /^[0-9]+(\.[0-9]+).*/
-    branches:
-      ignore: /.*/
-  # Filter by MASTER
-  master: &master_filters
-    branches:
-      only:
-        - master
+    # Android Container API 29
+    container_config: &android_container
+        working_directory: ~/gradle-react-native
+        docker: # https://circleci.com/docs/2.0/circleci-images/#android
+            -   image: circleci/android:api-29-node
+        environment:
+            JVM_OPTS: -Xmx3g
+    # Filter by version tag: "1.0 .. 1.0.0.1-something"
+    version: &version_filters
+        tags: # 1.0 ... 1.0.1.1
+            only: /^[0-9]+(\.[0-9]+).*/
+        branches:
+            ignore: /.*/
+    # Filter by MASTER
+    master: &master_filters
+        branches:
+            only:
+                - master
 
 ## Global environment
 environment:
-  TERM: dumb
+    TERM: dumb
 
 ## Reusable commands
 commands:
-  # Recover cache for all jobs
-  restore_dependencies_cache:
-    steps:
-      - restore_cache:
-          name: Restore Gradle Build Cache
-          keys:
-            - gradle-cache-{{ checksum "CACHE_HASH" }}
-            # fallback to using the latest cache if no exact match is found
-            - dependency-cache-
-      - restore_cache:
-          name: Restore Yarn cache
-          keys:
-            - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
-      - restore_cache:
-          name: Plugin Build folder cache
-          keys:
-            - plugin-build-{{ .Revision }}
-      - restore_cache:
-          name: Sample application folder cache
-          keys:
-            - sample-build-{{ .Revision }}
-  checksum_sources:
-    steps:
-      # https://discuss.circleci.com/t/caching-based-on-the-checksum-of-a-directorys-contents/28748
-      - run:
-          name: Calculate the checksums
-          command: |
-            # https://unix.stackexchange.com/questions/102191/find-with-multiple-name-and-exec-executes-only-the-last-matches-of-nam
-            cp /dev/null CACHE_HASH
-            ## echo $(find ./plugin/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
-            ## echo $(find ./sample/ReactNativePlugin/android/app/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
-            ## echo $(find . -type f -not -path "*/node_modules/*" \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" \) -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
-            echo $(git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/" | xargs md5sum 2>/dev/null) >>CACHE_HASH
-            # calculate final cache hash
-            ## echo $(cat CACHE_HASH | md5sum | cut -d' ' -f1) >CACHE_HASH
-  checksum_gradle:
-    steps:
-      # https://stackoverflow.com/questions/4210042/how-to-exclude-a-directory-in-find-command
-      - run:
-          name: Calculate the checksum for gradle project
-          command: |
-            cp /dev/null CACHE_HASH
-            # all dependencies are declare in *.gradle, *.gradle.kts & gradle.properties files
-            echo $(find . -type f \
-              -not -path "*/node_modules/*" \
-              \( \
-                -name "*.gradle" \
-                -o -name "*.gradle.kts" \
-                -o -name "gradle.properties" \
-              \) \
-              -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
-            # all RN dependencies are declared in package.json & yarn.lock file
-            echo $(find . -type f \
-              -not -path "*/node_modules/*" \
-               \( \
-                -name "package.json" \
-                -o -name "yarn.lock" \
-              \) \
-              -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
-  git-list-ignored-files:
-    steps:
-      - run:
-          name: List of all ignored files
-          command: |
-            git status --ignored
-  git-list-tracked-files:
-    steps:
-      - run:
-          name: List all tracked files in folder
-          command: |
-            git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/"
-  # <~ end of commands
+    # Recover cache for all jobs
+    restore_dependencies_cache:
+        steps:
+            -   restore_cache:
+                    name: Restore Gradle Build Cache
+                    keys:
+                        - gradle-cache-{{ checksum "CACHE_HASH" }}
+                        # fallback to using the latest cache if no exact match is found
+                        - gradle-cache-
+            -   restore_cache:
+                    name: Restore Yarn cache
+                    keys:
+                        - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
+                        # fallback to using the latest cache if no exact match is found
+                        - yarn-cache--
+            -   restore_cache:
+                    name: Plugin Build folder cache
+                    keys:
+                        - plugin-build-{{ .Revision }}
+            -   restore_cache:
+                    name: Sample application folder cache
+                    keys:
+                        - sample-build-{{ .Revision }}
+    checksum_sources:
+        steps:
+            # https://discuss.circleci.com/t/caching-based-on-the-checksum-of-a-directorys-contents/28748
+            -   run:
+                    name: Calculate the checksums
+                    command: |
+                        # https://unix.stackexchange.com/questions/102191/find-with-multiple-name-and-exec-executes-only-the-last-matches-of-nam
+                        cp /dev/null CACHE_HASH
+                        ## echo $(find ./plugin/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+                        ## echo $(find ./sample/ReactNativePlugin/android/app/src -type f -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+                        ## echo $(find . -type f -not -path "*/node_modules/*" \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" \) -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+                        echo $(git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/" | xargs md5sum 2>/dev/null) >>CACHE_HASH
+                        # calculate final cache hash
+                        ## echo $(cat CACHE_HASH | md5sum | cut -d' ' -f1) >CACHE_HASH
+    checksum_gradle:
+        steps:
+            # https://stackoverflow.com/questions/4210042/how-to-exclude-a-directory-in-find-command
+            -   run:
+                    name: Calculate the checksum for gradle project
+                    command: |
+                        cp /dev/null CACHE_HASH
+                        # all dependencies are declare in *.gradle, *.gradle.kts & gradle.properties files
+                        echo $(find . -type f \
+                          -not -path "*/node_modules/*" \
+                          \( \
+                            -name "*.gradle" \
+                            -o -name "*.gradle.kts" \
+                            -o -name "gradle.properties" \
+                          \) \
+                          -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+                        # all RN dependencies are declared in package.json & yarn.lock file
+                        echo $(find . -type f \
+                          -not -path "*/node_modules/*" \
+                           \( \
+                            -name "package.json" \
+                            -o -name "yarn.lock" \
+                          \) \
+                          -exec md5sum {} \; | md5sum | cut -d' ' -f1) >>CACHE_HASH
+    git-list-ignored-files:
+        steps:
+            -   run:
+                    name: List of all ignored files
+                    command: |
+                        git status --ignored
+    git-list-tracked-files:
+        steps:
+            -   run:
+                    name: List all tracked files in folder
+                    command: |
+                        git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/"
+    # <~ end of commands
 
 ## Declare JOBS
 jobs:
-  ## Download all dependencies
-  dependencies:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # yarn install
-          name: Install ReactNative project dependencies
-          command: |
-            pushd sample/ReactNativePlugin
-            yarn
-            popd
-      - run: # dependencies
-          name: Download Dependencies
-          command: |
-            ./gradlew dependencies
-            ./gradlew dependencyUpdates -Drevision=release
-      - save_cache: # gradle dependencies
-          paths:
-            - ~/.gradle
-            - ~/.m2
-          key: gradle-cache-{{ checksum "CACHE_HASH" }}
-      - save_cache: # yarn dependencies
-          paths:
-            - ~/.cache/yarn
-            - sample/ReactNativePlugin/node_modules
-          key: yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
+    ## Download all dependencies
+    dependencies:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # yarn install
+                    name: Install ReactNative project dependencies
+                    command: |
+                        pushd sample/ReactNativePlugin
+                        yarn
+                        popd
+            -   run: # dependencies
+                    name: Download Dependencies
+                    command: |
+                        ./gradlew dependencies
+                        ./gradlew dependencyUpdates -Drevision=release
+            -   save_cache: # gradle dependencies
+                    paths:
+                        - ~/.gradle
+                        - ~/.m2
+                        - ~/gradle-react-native/.gradle
+                    key: gradle-cache-{{ checksum "CACHE_HASH" }}
+            -   save_cache: # yarn dependencies
+                    paths:
+                        - ~/.cache/yarn
+                        - sample/ReactNativePlugin/node_modules
+                    key: yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
 
-  ## DEBUG or SNAPSHOT binaries
-  debug:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # build
-          name: Compile Debug Binaries
-          command: |
-            set -x
-            rm -rf ~/plugin/build/libs
-            # extract new proposed version from version.properties
-            export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
-            ./gradlew build assembleDebug -x check -Pversion=${VER}-SNAPSHOT
+    ## DEBUG or SNAPSHOT binaries
+    debug:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # build
+                    name: Compile Debug Binaries
+                    command: |
+                        set -x
+                        rm -rf ~/plugin/build/libs
+                        # extract new proposed version from version.properties
+                        export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
+                        ./gradlew build assembleDebug -x check -Pversion=${VER}-SNAPSHOT
 
 
 
-  ## RELEASE binaries
-  release:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # build
-          name: Compile Release Binaries
-          command: |
-            set -x
-            rm -rf ~/plugin/build/libs
-            # extract new proposed version from version.properties
-            export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
-            ./gradlew build assembleRelease -x check -Pversion=${VER}
-      - store_artifacts: # annotations
-          path: ~/plugin/build/libs
-          destination: libs
-      - save_cache: # plugin
-          paths:
-            - ~/plugin/build
-          key: plugin-build-{{ .Revision }}
-      - save_cache: # sample
-          paths:
-            - ~/sample/ReactNativePlugin/android/app/build
-          key: sample-build-{{ .Revision }}
+    ## RELEASE binaries
+    release:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # build
+                    name: Compile Release Binaries
+                    command: |
+                        set -x
+                        rm -rf ~/plugin/build/libs
+                        # extract new proposed version from version.properties
+                        export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
+                        ./gradlew build assembleRelease -x check -Pversion=${VER}
+            -   store_artifacts: # annotations
+                    path: ~/plugin/build/libs
+                    destination: libs
+            -   save_cache: # plugin
+                    paths:
+                        - ~/plugin/build
+                    key: plugin-build-{{ .Revision }}
+            -   save_cache: # sample
+                    paths:
+                        - ~/sample/ReactNativePlugin/android/app/build
+                    key: sample-build-{{ .Revision }}
 
-  ## Unit Tests
-  test:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # tests
-          name: Run unit tests
-          command: |
-              rm -rf build/reports
-              rm -rf plugin/build/jacoco
-              ./gradlew jacocoRootReport --rerun-tasks
-      - run: # collect results
-          name: Save test results
-          command: |
-            mkdir -p ~/rm test-results/junit/
-            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
-          when: always
-      - run: # upload coverage
-          name: Upload code coverage results
-          command: |
-            bash <(curl -s https://codecov.io/bash)
-      - store_test_results:
-          path: ~/test-results
-      - store_artifacts:
-          path: build/reports/jacoco/jacocoRootReport
-          destination: reports/jacoco
-      - store_artifacts:
-          path: ~/test-results/junit
-          destination: junit
+    ## Unit Tests
+    # https://blog.jdriven.com/2017/10/run-one-or-exclude-one-test-with-gradle/
+    test:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # tests
+                    name: Run unit tests
+                    command: |
+                        rm -rf build/reports
+                        rm -rf plugin/build/jacoco
+                        rm -rf plugin/build/functionalTest
+                        ./gradlew --stop
+                        ./gradlew jacocoRootReport --rerun-tasks --no-daemon --stacktrace --scan
+            -   run: # collect results
+                    name: Save test results
+                    command: |
+                        mkdir -p ~/rm test-results/junit/
+                        find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
+                    when: always
+            -   run: # upload coverage
+                    name: Upload code coverage results
+                    command: |
+                        bash <(curl -s https://codecov.io/bash)
+            -   store_test_results:
+                    path: ~/test-results
+            -   store_artifacts:
+                    path: build/reports/jacoco/jacocoRootReport
+                    destination: reports/jacoco
+            -   store_artifacts:
+                    path: ~/test-results/junit
+                    destination: junit
 
-  ## Lint
-  lint:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # lint
-          name: Run Lint
-          command: ./gradlew lint
-      - store_artifacts:
-          path: sample/ReactNativePlugin/android/app/build/reports
-          destination: reports/lint
+    ## Lint
+    lint:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # lint
+                    name: Run Lint
+                    command: ./gradlew lint
+            -   store_artifacts:
+                    path: sample/ReactNativePlugin/android/app/build/reports
+                    destination: reports/lint
 
-  ## KtLint
-  ktlint:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # lint
-          name: Run Lint
-          command: ./gradlew ktlintCheck
-      - store_artifacts:
-          path: plugin/build/reports/ktlint
-          destination: reports/ktlint
+    ## KtLint
+    ktlint:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # lint
+                    name: Run Lint
+                    command: ./gradlew ktlintCheck
+            -   store_artifacts:
+                    path: plugin/build/reports/ktlint
+                    destination: reports/ktlint
 
-  ## Detekt
-  detekt:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # lint
-          name: Run Lint
-          command: ./gradlew detekt
-      - store_artifacts:
-          path: plugin/build/reports/detekt
-          destination: reports/detekt
+    ## Detekt
+    detekt:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # lint
+                    name: Run Lint
+                    command: ./gradlew detekt
+            -   store_artifacts:
+                    path: plugin/build/reports/detekt
+                    destination: reports/detekt
 
-  ## Dokka
-  dokka:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # lint
-          name: Run Lint
-          command: ./gradlew dokka
-      - store_artifacts:
-          path: plugin/build/javadoc
-          destination: reports/javadoc
+    ## Dokka
+    dokka:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # lint
+                    name: Run Lint
+                    command: ./gradlew dokka
+            -   store_artifacts:
+                    path: plugin/build/javadoc
+                    destination: reports/javadoc
 
-  ## Deploy
-  deploy:
-    <<: *android_container
-    steps:
-      - checkout
-      - checksum_sources
-      - restore_dependencies_cache
-      - run: # version
-          name: Version Autogenerate
-          command: bash gradle/version-up.sh
-      - run: # lint
-          name: Run Lint
-          command: ./gradlew lint
+    ## Deploy
+    deploy:
+        <<: *android_container
+        steps:
+            - checkout
+            - checksum_sources
+            - restore_dependencies_cache
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
+            -   run: # publishPlugins
+                    name: Run Lint
+                    command: |
+                        ./gradlew publishPlugins -Pgradle.publish.key=${PUBLISHING_KEY} -Pgradle.publish.secret=${PUBLISHING_SECRET}
 
 #
 # https://circleci.com/docs/2.0/workflows/
 #          
 workflows:
-  version: 2
-  quick_build:
-    jobs:
-      - dependencies
-      - debug:
-          requires:
-            - dependencies
-      - detekt:
-          requires:
-            - dependencies
-      - ktlint:
-          requires:
-            - dependencies
-      - lint:
-          requires:
-            - dependencies
-      - dokka:
-          requires:
-            - dependencies
-  warmup_cache_daily: # keep our cache always warm
-    jobs:
-      - dependencies
-    triggers:
-      - schedule: # https://crontab.guru/#0_0_*_*_* - every day
-          cron: "0 0 * * *"
-          filters: *master_filters
-  build_test_deploy:
-    jobs:
-      - dependencies:
-          filters: *master_filters
-      - debug:
-          requires:
-            - dependencies
-      - release:
-          requires:
-            - dependencies
-      - lint:
-          requires:
-            - debug
-      - ktlint:
-          requires:
-            - debug
-      - detekt:
-          requires:
-            - debug
-      - dokka:
-          requires:
-            - debug
-      - test:
-          requires:
-            - debug
-      - gatekeeper:
-          type: approval
-          requires:
-            - test
-            - lint
-            - ktlint
-            - detekt
-            - dokka
-            - release
-      - deploy:
-          requires:
-            - gatekeeper
-  tag_build_test_deploy:
-    jobs:
-      - dependencies:
-          filters: *version_filters
-      - debug:
-          requires:
-            - dependencies
-          filters: *version_filters
-      - release:
-          requires:
-            - dependencies
-          filters: *version_filters
-      - lint:
-          requires:
-            - debug
-          filters: *version_filters
-      - test:
-          requires:
-            - release
-            - debug
-          filters: *version_filters
-      - gatekeeper:
-          type: approval
-          requires:
-            - test
-            - lint
-          filters: *version_filters
-      - deploy:
-          requires:
-            - gatekeeper
-          filters: *version_filters
+    version: 2
+    # keep our cache always warm
+    warmup_cache_daily:
+        jobs:
+            -   dependencies
+        triggers:
+            -   schedule: # https://crontab.guru/#0_0_*_*_* - every day
+                    cron: "0 0 * * *"
+                    filters: *master_filters
+    # Run all quick builds that allows to keep quality
+    quick_build:
+        jobs:
+            -   dependencies
+            -   debug:
+                    requires:
+                        - dependencies
+            -   detekt:
+                    requires:
+                        - dependencies
+            -   ktlint:
+                    requires:
+                        - dependencies
+            -   lint:
+                    requires:
+                        - dependencies
+            -   dokka:
+                    requires:
+                        - dependencies
+    # code coverage and tests for Pull Requests
+    pr_feedback:
+        jobs:
+            -   dependencies
+            -   debug:
+                    requires:
+                        - dependencies
+            -   test:
+                    requires:
+                        - dependencies
+    # Build full cycle required for publishing
+    build_test_deploy:
+        jobs:
+            -   dependencies:
+                    filters: *master_filters
+            -   debug:
+                    requires:
+                        - dependencies
+            -   release:
+                    requires:
+                        - dependencies
+            -   lint:
+                    requires:
+                        - debug
+            -   ktlint:
+                    requires:
+                        - debug
+            -   detekt:
+                    requires:
+                        - debug
+            -   dokka:
+                    requires:
+                        - debug
+            -   test:
+                    requires:
+                        - debug
+            -   gatekeeper:
+                    type: approval
+                    requires:
+                        - test
+                        - lint
+                        - ktlint
+                        - detekt
+                        - dokka
+                        - release
+            -   deploy:
+                    requires:
+                        - gatekeeper
+    # Cycle needed for publishing tagged version
+    tag_build_test_deploy:
+        jobs:
+            -   dependencies:
+                    filters: *version_filters
+            -   debug:
+                    requires:
+                        - dependencies
+                    filters: *version_filters
+            -   release:
+                    requires:
+                        - dependencies
+                    filters: *version_filters
+            -   test:
+                    requires:
+                        - release
+                        - debug
+                    filters: *version_filters
+            -   gatekeeper:
+                    type: approval
+                    requires:
+                        - test
+                    filters: *version_filters
+            -   deploy:
+                    requires:
+                        - gatekeeper
+                    filters: *version_filters
 
 # References:
 #   https://github.com/asksven/BetterBatteryStats/blob/master/circle.yml

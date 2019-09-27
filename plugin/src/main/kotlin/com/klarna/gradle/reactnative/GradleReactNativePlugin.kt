@@ -34,10 +34,6 @@ open class GradleReactNativePlugin : Plugin<Project> {
         project.gradle.addListener(this)
     }
 
-    /** Extract plugin configuration. */
-    private fun getConfiguration(project: Project) =
-        project.extensions.getByType(RnConfig::class.java)
-
     /** After project evaluation all plugins and extensions are applied and its right time
      * for attaching/configure plugin internals. */
     private fun afterProjectEvaluate(project: Project) {
@@ -108,5 +104,9 @@ open class GradleReactNativePlugin : Plugin<Project> {
          * other in `buildTypes` sub-section. */
         const val EXCEPTION_OUT_OF_SYNC_BUILDS =
             "`android` and `react` `buildTypes` configurations should be in sync"
+
+        /** Extract plugin configuration. */
+        fun getConfiguration(project: Project): RnConfig =
+            project.extensions.getByType(RnConfig::class.java)
     }
 }
