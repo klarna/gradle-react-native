@@ -35,11 +35,13 @@ commands:
                     keys:
                         - gradle-cache-{{ checksum "CACHE_HASH" }}
                         # fallback to using the latest cache if no exact match is found
-                        - dependency-cache-
+                        - gradle-cache-
             -   restore_cache:
                     name: Restore Yarn cache
                     keys:
                         - yarn-cache-{{ checksum "sample/ReactNativePlugin/package.json" }}-{{ checksum "sample/ReactNativePlugin/yarn.lock" }}
+                        # fallback to using the latest cache if no exact match is found
+                        - yarn-cache--
             -   restore_cache:
                     name: Plugin Build folder cache
                     keys:
@@ -202,7 +204,9 @@ jobs:
                     command: |
                         rm -rf build/reports
                         rm -rf plugin/build/jacoco
-                        ./gradlew jacocoRootReport --rerun-tasks --info --no-daemon
+                        rm -rf plugin/build/functionalTest
+                        ./gradlew --stop
+                        ./gradlew jacocoRootReport --rerun-tasks --no-daemon --stacktrace --scan
             -   run: # collect results
                     name: Save test results
                     command: |
