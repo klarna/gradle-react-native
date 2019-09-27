@@ -11,6 +11,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
+//region Constants
 const val DOLLAR = "\$"
 /** @see <a href="https://docs.gradle.org/current/userguide/kotlin_dsl.html#sec:plugins_resolution_strategy">Plugin resolution strategy<a> */
 const val ANDROID_PLUGIN = """
@@ -86,6 +87,7 @@ plugins {
 
 $ANDROID_SECTION
 """
+//endregion
 
 /** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
@@ -109,9 +111,14 @@ class GradleReactNativePluginFunctionalTest {
         val jacocoVer = "org.jacoco.agent-0.8.4.jar_982888894296538c98d7324f3ca78d8f"
         val jacocoRuntime: File = File("$expandedDir/$jacocoVer/jacocoagent.jar")
         val testName = testName.methodName.replace(' ', '_').replace('\'', '_')
+        val javaAgent = "-javaagent:${jacocoRuntime.absolutePath}" +
+            "=destfile=${jacocoDir.absolutePath}/$testName.exec"
+        val memory = "-Xmx2048M -Dkotlin.daemon.jvm.options\\=\"-Xmx2048M\""
         projectDir.resolve("gradle.properties").writeText("""
             # method=${this.testName.methodName}
-            org.gradle.jvmargs=-javaagent:${jacocoRuntime.absolutePath}=destfile=${jacocoDir.absolutePath}/$testName.exec
+            org.gradle.caching=true
+            org.gradle.daemon=false
+            org.gradle.jvmargs=$javaAgent $memory -Dfile.encoding=UTF-8
         """.trimIndent())
     }
 
