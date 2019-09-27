@@ -192,6 +192,7 @@ jobs:
     # https://blog.jdriven.com/2017/10/run-one-or-exclude-one-test-with-gradle/
     test:
         <<: *android_container
+        resource_class: large
         steps:
             - checkout
             - checksum_sources
