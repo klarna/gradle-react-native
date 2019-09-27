@@ -3,13 +3,14 @@
  */
 package com.klarna.gradle.reactnative
 
-import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Rule
 import org.junit.rules.TestName
+import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.text.RegexOption.IGNORE_CASE
 
 //region Constants
 const val DOLLAR = "\$"
@@ -91,7 +92,7 @@ $ANDROID_SECTION
 
 /** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
-    private val projectDir: File = File("build/functionalTest")
+    private var projectDir: File = File("build/functionalTest")
     private val jacocoDir: File = File("build/jacoco/functionalTest")
 
     @Rule
@@ -100,6 +101,12 @@ class GradleReactNativePluginFunctionalTest {
 
     @BeforeTest
     fun initializeDirectory() {
+        // make test name safe for using as a file name
+        val testName = testName.methodName.replace(
+            "[^a-z0-9.-]".toRegex(IGNORE_CASE), "_"
+        )
+
+        projectDir = File("build/functionalTest/$testName")
         projectDir.mkdirs()
 
         // make empty files
@@ -110,26 +117,31 @@ class GradleReactNativePluginFunctionalTest {
         val expandedDir = "build/tmp/expandedArchives"
         val jacocoVer = "org.jacoco.agent-0.8.4.jar_982888894296538c98d7324f3ca78d8f"
         val jacocoRuntime: File = File("$expandedDir/$jacocoVer/jacocoagent.jar")
-        val testName = testName.methodName.replace(' ', '_').replace('\'', '_')
         val javaAgent = "-javaagent:${jacocoRuntime.absolutePath}" +
             "=destfile=${jacocoDir.absolutePath}/$testName.exec"
-        val memory = "-Xmx2048M -Dkotlin.daemon.jvm.options\\=\"-Xmx2048M\""
-        projectDir.resolve("gradle.properties").writeText("""
+        val memory = "-Xmx2g" +
+            " -Dkotlin.daemon.jvm.options=\"-Xmx2g\"" +
+            " -Dkotlin.compiler.execution.strategy=\"in-process\""
+        projectDir.resolve("gradle.properties").writeText(
+            """
             # method=${this.testName.methodName}
-            org.gradle.caching=true
+            org.gradle.caching=false
             org.gradle.daemon=false
             org.gradle.jvmargs=$javaAgent $memory -Dfile.encoding=UTF-8
-        """.trimIndent())
+            """.trimIndent()
+        )
     }
 
     @Test
     fun `fail on no android app plugin`() {
         // Setup the test build
-        projectDir.resolve("build.gradle").writeText("""
+        projectDir.resolve("build.gradle").writeText(
+            """
             plugins {
                 id('${GradleReactNativePlugin.PLUGIN}')
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // Run the build
         val result = GradleRunner.create()
@@ -145,10 +157,12 @@ class GradleReactNativePluginFunctionalTest {
     @Test
     fun `can run compile task`() {
         // Setup the test build
-        projectDir.resolve("build.gradle").writeText("""
+        projectDir.resolve("build.gradle").writeText(
+            """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // Run the build
         val result = GradleRunner.create()
@@ -165,10 +179,12 @@ class GradleReactNativePluginFunctionalTest {
     @Test
     fun `can run copy task`() {
         // Setup the test build
-        projectDir.resolve("build.gradle").writeText("""
+        projectDir.resolve("build.gradle").writeText(
+            """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // Run the build
         val result = GradleRunner.create()
@@ -185,7 +201,8 @@ class GradleReactNativePluginFunctionalTest {
     @Test
     fun `can configure extension`() {
         // Setup the test build
-        projectDir.resolve("build.gradle").writeText("""
+        projectDir.resolve("build.gradle").writeText(
+            """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
             react {
@@ -193,7 +210,8 @@ class GradleReactNativePluginFunctionalTest {
                bundleAssetName "index.android.bundle"
                entryFile "index.android.js"
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // Run the build
         val result = GradleRunner.create()
@@ -210,7 +228,8 @@ class GradleReactNativePluginFunctionalTest {
     @Test
     fun `welcome to react native plugin`() {
         // Setup the test build
-        projectDir.resolve("build.gradle").writeText("""
+        projectDir.resolve("build.gradle").writeText(
+            """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
             $ANDROID_BUILD_TYPES_SECTION
@@ -231,7 +250,8 @@ class GradleReactNativePluginFunctionalTest {
                     }
                 }
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // Run the build
         val result = GradleRunner.create()

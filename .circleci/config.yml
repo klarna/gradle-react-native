@@ -345,7 +345,7 @@ workflows:
                         - dependencies
             -   test:
                     requires:
-                        - debug
+                        - dependencies
     # Build full cycle required for publishing
     build_test_deploy:
         jobs:
