@@ -211,5 +211,7 @@ class GradleReactNativePluginFunctionalTest {
             .withProjectDir(projectDir)
             .withArguments(CompileRnBundleTask.NAME)
             .build()
+
+        assertTrue(result.output.contains(CompileRnBundleTask.DUMMY))
     }
 }

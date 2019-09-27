@@ -200,7 +200,7 @@ jobs:
                     command: |
                         rm -rf build/reports
                         rm -rf plugin/build/jacoco
-                        ./gradlew jacocoRootReport --rerun-tasks
+                        ./gradlew jacocoRootReport --rerun-tasks --info --no-daemon
             -   run: # collect results
                     name: Save test results
                     command: |
