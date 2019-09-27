@@ -27,6 +27,12 @@ open class FlavorTypes
         project?.logger?.info("'productFlavors' extension registered to $name")
     }
 
+    /** dump class configuration in groovy format */
+    override fun toString(): String = "$name " +
+        "{ bundleIn = $bundleIn" +
+        ", enableHermes = $enableHermes" +
+        " }"
+
     companion object {
         /** Serialization UID. */
         const val serialVersionUID = 1L

@@ -50,6 +50,15 @@ open class BuildTypes
         project?.logger?.info("'buildTypes' extension registered to $name")
     }
 
+    /** dump class configuration in groovy format */
+    override fun toString(): String = "$name " +
+        "{ bundleIn = $bundleIn" +
+        ", devDisabled = $devDisabled" +
+        ", enableHermes = $enableHermes" +
+        ", jsBundleDir = \"$jsBundleDir\"" +
+        ", resourcesDir = \"$resourcesDir\"" +
+        " }"
+
     companion object {
         /** Serialization UID. */
         const val serialVersionUID = 1L

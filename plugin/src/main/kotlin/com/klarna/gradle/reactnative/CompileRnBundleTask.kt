@@ -26,6 +26,9 @@ open class CompileRnBundleTask
     @TaskAction
     fun doAction() {
         println(DUMMY)
+
+        val react = GradleReactNativePlugin.getConfiguration(project)
+        project.logger.info("$react")
     }
 
     companion object {

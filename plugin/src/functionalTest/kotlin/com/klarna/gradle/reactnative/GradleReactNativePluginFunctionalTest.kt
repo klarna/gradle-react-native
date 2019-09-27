@@ -51,9 +51,28 @@ android {
         versionCode 1
         versionName "1.0"
     }
+}
+"""
+/** buildTypes configuration for `android { ... }` */
+const val ANDROID_BUILD_TYPES_SECTION = """
+android {
     buildTypes {
         release {
             minifyEnabled false
+        }
+    }
+} 
+"""
+/** productFlavors configuration for `android { ... }` */
+const val ANDROID_FLAVORS_SECTION = """
+android {
+    flavorDimensions "dummy"
+    productFlavors {
+        local {
+        }
+        yellow {
+        }
+        pink {
         }
     }
 } 
@@ -187,20 +206,23 @@ class GradleReactNativePluginFunctionalTest {
         projectDir.resolve("build.gradle").writeText("""
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
+            $ANDROID_BUILD_TYPES_SECTION
+            $ANDROID_FLAVORS_SECTION
             react {
-                root "$projectDir"
+                root "${DOLLAR}buildDir/../.."
                 bundleAssetName "index.bundle"
                 entryFile "index.js"
                
-                /* 
                 buildTypes {
                     debug {
                         enableHermes = true
+                        jsBundleDir = "${DOLLAR}buildDir/intermediates/assets/debug"
                     }
                     release {
                         bundleIn = true
+                        jsBundleDir = "${DOLLAR}buildDir/intermediates/assets/release"
                     }
-                } //*/
+                }
             }
         """.trimIndent())
 
