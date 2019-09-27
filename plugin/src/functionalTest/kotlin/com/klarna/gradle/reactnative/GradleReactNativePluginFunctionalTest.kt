@@ -43,7 +43,6 @@ buildscript {
 """
 /** Minimal Android app configuration section */
 const val ANDROID_SECTION = """
-android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
     defaultConfig {
@@ -53,21 +52,17 @@ android {
         versionCode 1
         versionName "1.0"
     }
-}
 """
 /** buildTypes configuration for `android { ... }` */
 const val ANDROID_BUILD_TYPES_SECTION = """
-android {
     buildTypes {
         release {
             minifyEnabled false
         }
     }
-} 
 """
 /** productFlavors configuration for `android { ... }` */
 const val ANDROID_FLAVORS_SECTION = """
-android {
     flavorDimensions "dummy"
     productFlavors {
         local {
@@ -77,7 +72,6 @@ android {
         pink {
         }
     }
-} 
 """
 /** Gradle default build configuration. */
 const val GRADLE_PLUGINS = """
@@ -85,8 +79,6 @@ plugins {
     id('${GradleReactNativePlugin.ANDROID_APP_PLUGIN}') version "3.5.0"
     id('${GradleReactNativePlugin.PLUGIN}')
 }
-
-$ANDROID_SECTION
 """
 //endregion
 
@@ -140,7 +132,7 @@ class GradleReactNativePluginFunctionalTest {
             plugins {
                 id('${GradleReactNativePlugin.PLUGIN}')
             }
-        """.trimIndent()
+            """.trimIndent()
         )
 
         // Run the build
@@ -161,7 +153,10 @@ class GradleReactNativePluginFunctionalTest {
             """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
-        """.trimIndent()
+            android {
+                $ANDROID_SECTION
+            }
+            """.trimIndent()
         )
 
         // Run the build
@@ -183,7 +178,10 @@ class GradleReactNativePluginFunctionalTest {
             """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
-        """.trimIndent()
+            android {
+                $ANDROID_SECTION
+            }
+            """.trimIndent()
         )
 
         // Run the build
@@ -205,12 +203,15 @@ class GradleReactNativePluginFunctionalTest {
             """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
+            android {
+                $ANDROID_SECTION
+            }
             react {
                root "../.."
                bundleAssetName "index.android.bundle"
                entryFile "index.android.js"
             }
-        """.trimIndent()
+            """.trimIndent()
         )
 
         // Run the build
@@ -232,8 +233,11 @@ class GradleReactNativePluginFunctionalTest {
             """
             $GRADLE_DEPENDENCIES
             $GRADLE_PLUGINS
-            $ANDROID_BUILD_TYPES_SECTION
-            $ANDROID_FLAVORS_SECTION
+            android {
+                $ANDROID_SECTION
+                $ANDROID_BUILD_TYPES_SECTION
+                $ANDROID_FLAVORS_SECTION
+            }
             react {
                 root "${DOLLAR}buildDir/../.."
                 bundleAssetName "index.bundle"
@@ -250,7 +254,7 @@ class GradleReactNativePluginFunctionalTest {
                     }
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
         )
 
         // Run the build
