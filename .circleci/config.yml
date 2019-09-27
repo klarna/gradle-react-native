@@ -127,6 +127,7 @@ jobs:
                     paths:
                         - ~/.gradle
                         - ~/.m2
+                        - ~/gradle-react-native/.gradle
                     key: gradle-cache-{{ checksum "CACHE_HASH" }}
             -   save_cache: # yarn dependencies
                     paths:
