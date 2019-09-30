@@ -16,6 +16,7 @@ plugins {
     id("com.gradle.plugin-publish")
     id("org.jetbrains.dokka")
     id("org.jlleitschuh.gradle.ktlint")
+    id("com.adarshr.test-logger")
 }
 
 repositories {
