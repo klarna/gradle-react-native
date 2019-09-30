@@ -1,5 +1,6 @@
 /* React Native Build Gradle Plugin */
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.Properties
 
@@ -38,6 +39,9 @@ plugins {
     id("org.jetbrains.dokka") version "0.9.18" apply false
 
     jacoco
+
+    /* https://github.com/radarsh/gradle-test-logger-plugin */
+    id("com.adarshr.test-logger") version "1.7.0" apply false
 }
 
 /* Properties loader. */
@@ -170,10 +174,10 @@ val jacocoRootReport by tasks.registering(JacocoReport::class) {
     dependsOn(jacocoMerge)
 
     sourceDirectories.from(files(subprojects.map {
-        it.the<SourceSetContainer>()[SourceSet.MAIN_SOURCE_SET_NAME].allSource.srcDirs
+        it.sourceSets[MAIN_SOURCE_SET_NAME].allSource.srcDirs
     }))
     classDirectories.from(files(subprojects.map {
-        it.the<SourceSetContainer>()[SourceSet.MAIN_SOURCE_SET_NAME].output
+        it.sourceSets[MAIN_SOURCE_SET_NAME].output
     }))
     executionData(jacocoMerge.get().destinationFile)
 
