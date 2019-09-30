@@ -11,6 +11,7 @@ import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import com.klarna.gradle.reactnative.ReactNativeExtension as RNConfig
 import com.klarna.gradle.reactnative.ReactNativeExtension.Companion.EXTENSION as EXTENSION_REACT
 
@@ -281,6 +282,52 @@ class GradleReactNativePluginTest {
         }
     }
 
+    @Test
+    fun `apply applyJscPackagingOptions() for android application`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                packagingOptions.apply {
+                    exclude("META-INF/LICENSE")
+                    pickFirst("**/libjsc.so")
+                }
+            }
+
+            configure<RNConfig> {
+                applyJscPackagingOptions()
+            }
+        }
+
+        // force evaluation of the gradle project
+        (project as ProjectInternal).evaluate()
+
+        val android = GradleReactNativePlugin.getAndroidConfiguration(project)
+        with(android.packagingOptions.pickFirsts) {
+            assertTrue(any { "**/x86/libjsc.so" == it })
+            assertTrue(any { "**/armeabi-v7a/libjsc.so" == it })
+            assertTrue(any { "**/x86/libc++_shared.so" == it })
+            assertTrue(any { "**/x86_64/libc++_shared.so" == it })
+            assertTrue(any { "**/armeabi-v7a/libc++_shared.so" == it })
+            assertTrue(any { "**/arm64-v8a/libc++_shared.so" == it })
+            assertTrue(any { "**/libjsc.so" == it })
+        }
+    }
 //    @Test
 //    fun ``(){
 //

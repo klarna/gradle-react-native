@@ -41,8 +41,7 @@ open class GradleReactNativePlugin : Plugin<Project> {
         project.logger.info("configuration extracted: $react")
 
         // extract android plugin extension
-        val android = project.extensions.findByName("android") as? AppExtension
-        checkNotNull(android) { EXCEPTION_NO_ANDROID_PLUGIN }
+        val android = getAndroidConfiguration(project)
         checkNotNull(android.buildTypes) { EXCEPTION_NO_BUILD_TYPES }
         check(android.buildTypes.size != 0) { EXCEPTION_NO_BUILD_TYPES }
 
@@ -108,5 +107,13 @@ open class GradleReactNativePlugin : Plugin<Project> {
         /** Extract plugin configuration. */
         fun getConfiguration(project: Project): RnConfig =
             project.extensions.getByType(RnConfig::class.java)
+
+        /** Extract android application project configuration. */
+        fun getAndroidConfiguration(project: Project): AppExtension {
+            val android = project.extensions.findByName("android") as? AppExtension
+            checkNotNull(android) { GradleReactNativePlugin.EXCEPTION_NO_ANDROID_PLUGIN }
+
+            return android
+        }
     }
 }
