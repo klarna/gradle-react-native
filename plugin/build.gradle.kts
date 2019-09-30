@@ -99,9 +99,19 @@ pluginBundle {
 //endregion
 
 //region Functional Tests
+/* Create custom configuration for functional tests. */
 configurations {
     "functionalTestImplementation" {
         extendsFrom(getByName("testImplementation"))
+    }
+}
+
+/* Force expanded archive folder creation. */
+val expandJacocoAgentJar by tasks.registering(Copy::class) {
+    configurations.getByName("jacocoAgent").forEach {
+        logger.info("~> found jacoco agent: $it")
+        from(zipTree(it))
+        into(file("$buildDir/tmp/expandedArchives/${it.name}"))
     }
 }
 
@@ -151,11 +161,13 @@ val check by tasks.getting(Task::class) {
     dependsOn(functionalTest)
 }
 
+/* Compose kotlin classes documentation into javadoc folder */
 val dokka by tasks.getting(DokkaTask::class) {
     outputFormat = "html"
     outputDirectory = "$buildDir/javadoc"
 }
 
+/* Disable standard javadoc tasks for kotlin project. */
 val javadoc by tasks.getting(Javadoc::class) {
     setEnabled(false)
 
@@ -189,6 +201,7 @@ val javadoc by tasks.getting(Javadoc::class) {
     setSource(sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].allSource)
 }
 
+/* Compose documentation JAR. */
 val javadocJar by tasks.registering(Jar::class) {
     group = "documentation"
 
@@ -199,6 +212,7 @@ val javadocJar by tasks.registering(Jar::class) {
     from(dokka.outputDirectory)
 }
 
+/* Compose source code JAR. */
 val sourcesJar by tasks.registering(Jar::class) {
     description = "Creates a jar of java sources, classified -sources"
     archiveClassifier.set("sources")
@@ -206,12 +220,20 @@ val sourcesJar by tasks.registering(Jar::class) {
     from(sourceSets[SourceSet.MAIN_SOURCE_SET_NAME].allSource)
 }
 
-artifacts.add("archives", javadocJar)
-artifacts.add("archives", sourcesJar)
+artifacts {
+    add("archives", javadocJar)
+    add("archives", sourcesJar)
+}
+
+/* Create extra dependencies between tasks. */
+tasks.named("functionalTestClasses") {
+    finalizedBy(expandJacocoAgentJar)
+    finalizedBy(tasks.named("pluginUnderTestMetadata"))
+}
 //endregion
 
 //region Quality tools
-// Ktlint configuration for sub-projects
+/* Ktlint configuration for sub-projects */
 ktlint {
     /* https://github.com/pinterest/ktlint */
     version.set("0.34.2")
@@ -227,7 +249,7 @@ ktlint {
 
     additionalEditorconfigFile.set(file(".editorconfig"))
     // Unsupported now by current version of the plugin.
-    // disabledRules should be placed into .editconfig file temporary
+    // disabledRules should be placed into .editorconfig file temporary
 //        disabledRules.set(setOf(
 //                "import-ordering"
 //        ))
