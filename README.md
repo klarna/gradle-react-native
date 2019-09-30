@@ -87,7 +87,16 @@ react {
         release {
             /* ... */
         }
+        /* ... more build types ... */
     }
+    productFlavors {
+        local {
+            /* ... */
+        }
+        /* ... more flavors ... */
+    }
+    /* Reconfigure `android.packagingOptions{...}` for supporting well JSC integration. */
+    applyJscPackagingOptions()
 }
 ```
 

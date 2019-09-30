@@ -107,13 +107,13 @@ open class ReactNativeExtension
 
         /* Troubleshoot: https://github.com/react-native-community/jsc-android-buildscripts */
         android.packagingOptions.apply {
-            pickFirst( "**/x86/libjsc.so")
-            pickFirst( "**/armeabi-v7a/libjsc.so")
+            pickFirst("**/x86/libjsc.so")
+            pickFirst("**/armeabi-v7a/libjsc.so")
 
-            pickFirst( "**/x86/libc++_shared.so")
-            pickFirst( "**/x86_64/libc++_shared.so")
-            pickFirst( "**/armeabi-v7a/libc++_shared.so")
-            pickFirst( "**/arm64-v8a/libc++_shared.so")
+            pickFirst("**/x86/libc++_shared.so")
+            pickFirst("**/x86_64/libc++_shared.so")
+            pickFirst("**/armeabi-v7a/libc++_shared.so")
+            pickFirst("**/arm64-v8a/libc++_shared.so")
         }
     }
 

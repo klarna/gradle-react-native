@@ -70,7 +70,11 @@ open class GradleReactNativePlugin : Plugin<Project> {
     }
 
     /** For each android.buildType create/use corresponding react.buildType configuration */
-    private fun synchronizeBuildTypes(project: Project, android: AppExtension, react: RnConfig) {
+    private fun synchronizeBuildTypes(
+        project: Project,
+        android: AppExtension,
+        react: RnConfig
+    ) {
         // create corresponding build types
         android.buildTypes.forEach {
             project.logger.info("android build types: ${it.name}")
