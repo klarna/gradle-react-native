@@ -4,6 +4,9 @@
 package com.klarna.gradle.reactnative
 
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.testkit.runner.InvalidPluginMetadataException
+import org.gradle.testkit.runner.internal.PluginUnderTestMetadataReading
+import org.gradle.util.GUtil
 import org.junit.Rule
 import org.junit.rules.TestName
 import java.io.File
@@ -84,12 +87,24 @@ plugins {
 
 /** Functional tests. Try to run plugin in different modes. */
 class GradleReactNativePluginFunctionalTest {
-    private var projectDir: File = File("build/functionalTest")
-    private val jacocoDir: File = File("build/jacoco/functionalTest")
+    private var projectDir: File
+    private val jacocoDir: File
+    private val metadataDir: File
 
     @Rule
     @JvmField
     public val testName: TestName = TestName()
+
+    init {
+        val pwd = File("").absolutePath
+        val projectRootDirName = "/gradle-react-native/plugin"
+        if (!pwd.contains(projectRootDirName)) {
+            throw AssertionError("Wrong working directory set for functional tests.")
+        }
+        projectDir = File("build/functionalTest")
+        jacocoDir = File("build/jacoco/functionalTest")
+        metadataDir = File("build/pluginUnderTestMetadata")
+    }
 
     @BeforeTest
     fun initializeDirectory() {
@@ -107,7 +122,7 @@ class GradleReactNativePluginFunctionalTest {
 
         // runtime jacoco attaching
         val expandedDir = "build/tmp/expandedArchives"
-        val jacocoVer = "org.jacoco.agent-0.8.4.jar_982888894296538c98d7324f3ca78d8f"
+        val jacocoVer = "org.jacoco.agent-0.8.4.jar"
         val jacocoRuntime: File = File("$expandedDir/$jacocoVer/jacocoagent.jar")
         val javaAgent = "-javaagent:${jacocoRuntime.absolutePath}" +
             "=destfile=${jacocoDir.absolutePath}/$testName.exec"
@@ -118,10 +133,31 @@ class GradleReactNativePluginFunctionalTest {
             """
             # method=${this.testName.methodName}
             org.gradle.caching=false
-            org.gradle.daemon=false
+            #org.gradle.daemon=false
             org.gradle.jvmargs=$javaAgent $memory -Dfile.encoding=UTF-8
             """.trimIndent()
         )
+    }
+
+    /** Helper that should solve classpath loading for Unit tests running in IDE. */
+    private fun loadClasspath(): List<File> {
+        try {
+            return PluginUnderTestMetadataReading.readImplementationClasspath()
+        } catch (ignored: InvalidPluginMetadataException) {
+            /* we cannot extract `plugin-under-test-metadata.properties` file from resources. */
+        }
+
+        with(File(metadataDir, "plugin-under-test-metadata.properties")) {
+            if (!exists()) {
+                throw AssertionError("./gradlew :plugin:pluginUnderTestMetadata not called.")
+            }
+            val properties = GUtil.loadProperties(this)
+
+            return PluginUnderTestMetadataReading.readImplementationClasspath(
+                absolutePath,
+                properties
+            )
+        }
     }
 
     @Test
@@ -138,7 +174,7 @@ class GradleReactNativePluginFunctionalTest {
         // Run the build
         val result = GradleRunner.create()
             .forwardOutput()
-            .withPluginClasspath()
+            .withPluginClasspath(loadClasspath())
             .withProjectDir(projectDir)
             .withArguments(CompileRnBundleTask.NAME)
             .buildAndFail()
@@ -162,7 +198,7 @@ class GradleReactNativePluginFunctionalTest {
         // Run the build
         val result = GradleRunner.create()
             .forwardOutput()
-            .withPluginClasspath()
+            .withPluginClasspath(loadClasspath())
             .withProjectDir(projectDir)
             .withArguments(CompileRnBundleTask.NAME)
             .build()
@@ -187,7 +223,7 @@ class GradleReactNativePluginFunctionalTest {
         // Run the build
         val result = GradleRunner.create()
             .forwardOutput()
-            .withPluginClasspath()
+            .withPluginClasspath(loadClasspath())
             .withProjectDir(projectDir)
             .withArguments(CopyRnBundleTask.NAME)
             .build()
@@ -217,7 +253,7 @@ class GradleReactNativePluginFunctionalTest {
         // Run the build
         val result = GradleRunner.create()
             .forwardOutput()
-            .withPluginClasspath()
+            .withPluginClasspath(loadClasspath())
             .withProjectDir(projectDir)
             .withArguments(CompileRnBundleTask.NAME)
             .build()
@@ -260,7 +296,7 @@ class GradleReactNativePluginFunctionalTest {
         // Run the build
         val result = GradleRunner.create()
             .forwardOutput()
-            .withPluginClasspath()
+            .withPluginClasspath(loadClasspath())
             .withProjectDir(projectDir)
             .withArguments(CompileRnBundleTask.NAME)
             .build()
