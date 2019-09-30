@@ -126,14 +126,14 @@ class GradleReactNativePluginFunctionalTest {
         val jacocoRuntime: File = File("$expandedDir/$jacocoVer/jacocoagent.jar")
         val javaAgent = "-javaagent:${jacocoRuntime.absolutePath}" +
             "=destfile=${jacocoDir.absolutePath}/$testName.exec"
-        val memory = "-Xmx2g" +
-            " -Dkotlin.daemon.jvm.options=\"-Xmx2g\"" +
+        val memory = "-Xmx64m -Xms64m" +
+            " -Dkotlin.daemon.jvm.options=\"-Xmx64m\"" +
             " -Dkotlin.compiler.execution.strategy=\"in-process\""
         projectDir.resolve("gradle.properties").writeText(
             """
             # method=${this.testName.methodName}
             org.gradle.caching=false
-            #org.gradle.daemon=false
+            org.gradle.daemon=false
             org.gradle.jvmargs=$javaAgent $memory -Dfile.encoding=UTF-8
             """.trimIndent()
         )
