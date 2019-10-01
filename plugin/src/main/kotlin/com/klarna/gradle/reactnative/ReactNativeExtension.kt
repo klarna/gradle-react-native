@@ -47,12 +47,21 @@ open class ReactNativeExtension
     var entryFile: String? = "index.android.js"
     /** Type of the react native bundle that we build. */
     var bundleCommand: String? = "ram-bundle"
+    /** Enable compatibility mode with old RN build scripts. */
+    var enableCompatibility: Boolean = true
     /** Collection of the build types. */
     var buildTypes: DlsContainer<BuildTypes> =
         project.container(BuildTypes::class.java)
     /** Collection of the flavors. */
     var productFlavors: DlsContainer<FlavorTypes> =
         project.container(FlavorTypes::class.java)
+    /** Excludes from inputs used for detecting JS code changes */
+    var inputExcludes: List<String> = listOf("android/**", "ios/**")
+    /** Default node tool arguments. Override which node gets called and with what
+     * additional arguments. */
+    var nodeExecutableAndArgs: List<String> = listOf("node")
+    /** Supply additional arguments to the packager */
+    var extraPackagerArgs: List<String> = emptyList()
 
     /** Initialize class instance. */
     init {
@@ -86,6 +95,36 @@ open class ReactNativeExtension
     /** Product flavors definition helpers. Closure. */
     fun productFlavors(configuration: Closure<in FlavorTypes>): DlsContainer<FlavorTypes> =
         productFlavors.configure(configuration)
+
+    /**
+     * Allows in one line apply common packing configuration required for non-conflict JSC usage.
+     * ```gradle
+     *     android {
+     *         packagingOptions {
+     *             pickFirst '** /armeabi-v7a/libc++_shared.so'
+     *             pickFirst '** /x86/libc++_shared.so'
+     *             pickFirst '** /arm64-v8a/libc++_shared.so'
+     *             pickFirst '** /x86_64/libc++_shared.so'
+     *             pickFirst '** /x86/libjsc.so'
+     *             pickFirst '** /armeabi-v7a/libjsc.so'
+     *         }
+     *     }
+     * ```
+     * */
+    fun applyJscPackagingOptions() {
+        val android = GradleReactNativePlugin.getAndroidConfiguration(project)
+
+        /* Troubleshoot: https://github.com/react-native-community/jsc-android-buildscripts */
+        android.packagingOptions.apply {
+            pickFirst("**/x86/libjsc.so")
+            pickFirst("**/armeabi-v7a/libjsc.so")
+
+            pickFirst("**/x86/libc++_shared.so")
+            pickFirst("**/x86_64/libc++_shared.so")
+            pickFirst("**/armeabi-v7a/libc++_shared.so")
+            pickFirst("**/arm64-v8a/libc++_shared.so")
+        }
+    }
 
     companion object {
         /** Serialization UID. */

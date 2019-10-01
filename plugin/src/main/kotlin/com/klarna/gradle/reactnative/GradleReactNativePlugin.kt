@@ -4,8 +4,10 @@
 package com.klarna.gradle.reactnative
 
 import com.android.build.gradle.AppExtension
+import com.android.build.gradle.internal.utils.toImmutableList
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.extra
 import com.klarna.gradle.reactnative.ReactNativeExtension as RnConfig
 
 /** Unique plugin name. */
@@ -41,14 +43,74 @@ open class GradleReactNativePlugin : Plugin<Project> {
         project.logger.info("configuration extracted: $react")
 
         // extract android plugin extension
-        val android = project.extensions.findByName("android") as? AppExtension
-        checkNotNull(android) { EXCEPTION_NO_ANDROID_PLUGIN }
+        val android = getAndroidConfiguration(project)
         checkNotNull(android.buildTypes) { EXCEPTION_NO_BUILD_TYPES }
         check(android.buildTypes.size != 0) { EXCEPTION_NO_BUILD_TYPES }
 
         // synchronize build types and flavors
         synchronizeBuildTypes(project, android, react)
         synchronizeProductFlavors(project, android, react)
+
+        if (react.enableCompatibility) {
+            composeCompatibilityExtensionConfig(project, android, react)
+        }
+    }
+
+    /** Compose `project.ext.react = [ ... ]` array of settings for compatibility with old build scripts. */
+    @Suppress("UNCHECKED_CAST")
+    private fun composeCompatibilityExtensionConfig(
+        project: Project,
+        android: AppExtension,
+        react: RnConfig
+    ) {
+        project.logger.info("~> react: ${project.name} / $android / $react")
+
+        // https://docs.gradle.org/current/dsl/org.gradle.api.plugins.ExtraPropertiesExtension.html
+        if (!project.extra.has(REACT)) {
+            project.extra.set(REACT, mutableMapOf<String, Any?>())
+        }
+
+        val extraReact = (project.extra[REACT] as Map<String, *>).toMutableMap()
+        extraReact["root"] = react.root
+        extraReact["bundleAssetName"] = react.bundleAssetName
+        extraReact["entryFile"] = react.entryFile
+        extraReact["bundleCommand"] = react.bundleCommand
+        extraReact["enableCompatibility"] = react.enableCompatibility
+
+        iterateVariants(react) { bt, fl ->
+            val variant = fl.title + bt.title
+            extraReact["bundleIn$variant"] = fl.bundleIn ?: bt.bundleIn
+            extraReact["devDisabledIn$variant"] = fl.devDisabledIn ?: bt.devDisabledIn
+            extraReact["enableHermes$variant"] = fl.enableHermes ?: bt.enableHermes
+        }
+
+        react.buildTypes.forEach { bt ->
+            val buildName = bt.title
+            extraReact["jsBundleDir$buildName"] = bt.jsBundleDir
+            extraReact["resourcesDir$buildName"] = bt.resourcesDir
+        }
+
+        extraReact["inputExcludes"] = react.inputExcludes.toImmutableList()
+        extraReact["nodeExecutableAndArgs"] = react.nodeExecutableAndArgs.toImmutableList()
+        extraReact["extraPackagerArgs"] = react.extraPackagerArgs.toImmutableList()
+
+        // update project by our copy
+        project.extra[REACT] = extraReact
+    }
+
+    /** Iterate via all possible variants of builds. */
+    private fun iterateVariants(react: RnConfig, predicate: (BuildTypes, FlavorTypes) -> Unit) {
+        react.buildTypes.forEach { bt ->
+            val flavors = if (react.productFlavors.size > 0) {
+                react.productFlavors
+            } else {
+                listOf(FlavorTypes.Empty)
+            }
+
+            flavors.forEach { fl ->
+                predicate(bt, fl)
+            }
+        }
     }
 
     /** For each android.productFlavor create/use corresponding react.productFlavor configuration */
@@ -71,7 +133,11 @@ open class GradleReactNativePlugin : Plugin<Project> {
     }
 
     /** For each android.buildType create/use corresponding react.buildType configuration */
-    private fun synchronizeBuildTypes(project: Project, android: AppExtension, react: RnConfig) {
+    private fun synchronizeBuildTypes(
+        project: Project,
+        android: AppExtension,
+        react: RnConfig
+    ) {
         // create corresponding build types
         android.buildTypes.forEach {
             project.logger.info("android build types: ${it.name}")
@@ -91,6 +157,8 @@ open class GradleReactNativePlugin : Plugin<Project> {
         const val PLUGIN = PLUGIN_NAME_ID
         /** Dependent android plugin name. */
         const val ANDROID_APP_PLUGIN = "com.android.application"
+        /** Name of project.ext.react property. */
+        const val REACT = "react"
 
         /** Exception. Raised when plugin cannot find any android plugin attached to the project. */
         const val EXCEPTION_NO_ANDROID_PLUGIN = "Expected android application plugin"
@@ -108,5 +176,13 @@ open class GradleReactNativePlugin : Plugin<Project> {
         /** Extract plugin configuration. */
         fun getConfiguration(project: Project): RnConfig =
             project.extensions.getByType(RnConfig::class.java)
+
+        /** Extract android application project configuration. */
+        fun getAndroidConfiguration(project: Project): AppExtension {
+            val android = project.extensions.findByName("android") as? AppExtension
+            checkNotNull(android) { EXCEPTION_NO_ANDROID_PLUGIN }
+
+            return android
+        }
     }
 }

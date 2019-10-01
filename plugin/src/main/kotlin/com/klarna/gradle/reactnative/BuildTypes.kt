@@ -36,8 +36,8 @@ open class BuildTypes
      * By default only `debug` build types do not need including of the bundle.
      * */
     open var bundleIn: Boolean = (name != DEBUG)
-    /** Is debug information generation required for a specific build type. */
-    open var devDisabled = true
+    /** Should developer mode be disabled for this flavor or not. */
+    open var devDisabledIn: Boolean = (name != DEBUG)
     /** Enable `Hermes` JSC addition. */
     open var enableHermes: Boolean = false
     /** Destination directory of the JavaScript Bundle composed by bundler. */
@@ -50,10 +50,14 @@ open class BuildTypes
         project?.logger?.info("'buildTypes' extension registered to $name")
     }
 
+    /** Get capitalized name of the build type. */
+    @Suppress("DefaultLocale")
+    val title: String = name.capitalize()
+
     /** dump class configuration in groovy format */
     override fun toString(): String = "$name " +
         "{ bundleIn = $bundleIn" +
-        ", devDisabled = $devDisabled" +
+        ", devDisabledIn = $devDisabledIn" +
         ", enableHermes = $enableHermes" +
         ", jsBundleDir = \"$jsBundleDir\"" +
         ", resourcesDir = \"$resourcesDir\"" +

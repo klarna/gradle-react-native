@@ -7,10 +7,13 @@ import com.android.build.gradle.AppExtension
 import org.gradle.api.ProjectConfigurationException
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.extra
 import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import com.klarna.gradle.reactnative.ReactNativeExtension as RNConfig
 import com.klarna.gradle.reactnative.ReactNativeExtension.Companion.EXTENSION as EXTENSION_REACT
 
@@ -281,6 +284,260 @@ class GradleReactNativePluginTest {
         }
     }
 
+    @Test
+    fun `apply applyJscPackagingOptions() for android application`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                packagingOptions.apply {
+                    exclude("META-INF/LICENSE")
+                    pickFirst("**/libjsc.so")
+                }
+            }
+
+            configure<RNConfig> {
+                applyJscPackagingOptions()
+            }
+        }
+
+        // force evaluation of the gradle project
+        (project as ProjectInternal).evaluate()
+
+        val android = GradleReactNativePlugin.getAndroidConfiguration(project)
+        with(android.packagingOptions.pickFirsts) {
+            assertTrue(any { "**/x86/libjsc.so" == it })
+            assertTrue(any { "**/armeabi-v7a/libjsc.so" == it })
+            assertTrue(any { "**/x86/libc++_shared.so" == it })
+            assertTrue(any { "**/x86_64/libc++_shared.so" == it })
+            assertTrue(any { "**/armeabi-v7a/libc++_shared.so" == it })
+            assertTrue(any { "**/arm64-v8a/libc++_shared.so" == it })
+            assertTrue(any { "**/libjsc.so" == it })
+        }
+    }
+
+    @Test
+    fun `project extra properties not published in OFF compatibility mode`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                // release, debug, staging
+                buildTypes.apply {
+                    create("staging")
+                }
+
+                // local, yellow, release
+                flavorDimensions("dummy")
+                productFlavors.apply {
+                    create("local").apply {}
+                    create("yellow").apply {}
+                    create("pink").apply {}
+                }
+            }
+
+            configure<RNConfig> {
+                enableCompatibility = false
+                buildTypes.apply {
+                    create("debug").apply {
+                        bundleIn = false
+                    }
+                }
+                productFlavors.apply {
+                    create("pink").apply {
+                        enableHermes = true
+                    }
+                }
+            }
+        }
+
+        // then
+        (project as ProjectInternal).evaluate()
+
+        // when
+        assertNotNull(project.extensions.getByName(EXTENSION_REACT), "plugin extension exists")
+        assertFalse(project.extra.has("react"), "compatibility extras exists")
+    }
+
+    @Test
+    fun `project extra properties reflect DSL configuration`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                // release, debug, staging
+                buildTypes.apply {
+                    create("staging")
+                }
+
+                // local, yellow, release
+                flavorDimensions("dummy")
+                productFlavors.apply {
+                    create("local").apply {}
+                    create("yellow").apply {}
+                    create("pink").apply {}
+                }
+            }
+
+            configure<RNConfig> {
+                enableCompatibility = true
+                buildTypes.apply {
+                    create("debug").apply {
+                        bundleIn = false
+                    }
+                }
+                productFlavors.apply {
+                    create("pink").apply {
+                        enableHermes = true
+                    }
+                }
+            }
+        }
+
+        // then
+        (project as ProjectInternal).evaluate()
+
+        // when
+        assertNotNull(project.extensions.getByName(EXTENSION_REACT), "plugin extension exists")
+        assertTrue(project.extra.has("react"), "compatibility extras exists")
+
+        @Suppress("UNCHECKED_CAST")
+        val rc = project.extra.get("react") as Map<String, *>
+        assertNotNull(rc, "compatibility extras exists")
+
+        // verify that value is set
+        assertEquals("index.android.js", rc["entryFile"], "entryFile")
+        assertNotNull(rc["bundleAssetName"])
+        assertNotNull(rc["entryFile"])
+        assertNotNull(rc["bundleCommand"])
+        assertNotNull(rc["root"])
+        assertNotNull(rc["jsBundleDirRelease"])
+        assertNotNull(rc["jsBundleDirDebug"])
+        assertNotNull(rc["jsBundleDirStaging"])
+        assertNotNull(rc["resourcesDirRelease"])
+        assertNotNull(rc["resourcesDirDebug"])
+        assertNotNull(rc["resourcesDirStaging"])
+        assertNotNull(rc["inputExcludes"])
+        assertNotNull(rc["nodeExecutableAndArgs"])
+        assertNotNull(rc["extraPackagerArgs"])
+    }
+
+    @Test
+    fun `project extra properties reflect DSL configuration for flavors`() {
+        val project = ProjectBuilder.builder().build()
+
+        // given
+        with(project) {
+            plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
+            plugins.apply(GradleReactNativePlugin.PLUGIN)
+
+            configure<AppExtension> {
+                compileSdkVersion(29)
+                buildToolsVersion("29.0.2")
+
+                defaultConfig.apply {
+                    versionCode = 1
+                    versionName = "0.1"
+                    setMinSdkVersion(19)
+                    setTargetSdkVersion(29)
+                    applicationId = "dummy.myapplication"
+                }
+
+                // release, debug, staging
+                buildTypes.apply {
+                    create("staging")
+                }
+
+                // local, yellow, release
+                flavorDimensions("dummy")
+                productFlavors.apply {
+                    create("local").apply {}
+                    create("yellow").apply {}
+                    create("pink").apply {}
+                }
+            }
+
+            configure<RNConfig> {
+                enableCompatibility = true
+                buildTypes.apply {
+                    create("debug").apply {
+                        bundleIn = false
+                    }
+                }
+                productFlavors.apply {
+                    create("pink").apply {
+                        enableHermes = true
+                    }
+                }
+            }
+        }
+
+        // then
+        (project as ProjectInternal).evaluate()
+
+        // when
+        assertNotNull(project.extensions.getByName(EXTENSION_REACT), "plugin extension exists")
+        assertTrue(project.extra.has("react"), "compatibility extras exists")
+
+        @Suppress("UNCHECKED_CAST")
+        val rc = project.extra.get("react") as Map<String, *>
+        assertNotNull(rc, "compatibility extras exists")
+
+        // check that build type flag applied properly
+        assertEquals(false, rc["bundleInPinkDebug"], "bundleInPinkDebug")
+        assertEquals(false, rc["bundleInYellowDebug"], "bundleInYellowDebug")
+        assertEquals(false, rc["bundleInLocalDebug"], "bundleInLocalDebug")
+
+        // check that flavor flag applied properly
+        assertEquals(true, rc["enableHermesPinkDebug"], "enableHermesPinkDebug")
+        assertEquals(true, rc["enableHermesPinkRelease"], "enableHermesPinkRelease")
+        assertEquals(true, rc["enableHermesPinkStaging"], "enableHermesPinkStaging")
+    }
 //    @Test
 //    fun ``(){
 //

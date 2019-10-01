@@ -9,6 +9,8 @@
   - [Usage](#usage)
     - [Minimalistic](#minimalistic)
     - [Extended](#extended)
+    - [Compatibility](#compatibility)
+  - [| Old React Native | Our Plugin |](#old-react-native--our-plugin)
   - [Contribute](#contribute)
     - [Enable Git Hooks](#enable-git-hooks)
     - [Publishing](#publishing)
@@ -75,11 +77,13 @@ After applying plugin all tasks will be created automatically and attached to th
 apply plugin: "com.android.application"
 apply plugin: "com.klarna.gradle.reactnative"
 
+/* https://developer.android.com/studio/build/index.html */
 android {
     /* ... Configuration of the Android app ... */
 }
 
 react {
+    /* declare custom configuration options for each build type */
     buildTypes {
         debug {
             /* ... */
@@ -87,9 +91,53 @@ react {
         release {
             /* ... */
         }
+        /* ... more build types ... */
     }
+    
+    /* declare custom configuration options for each flavor */
+    productFlavors {
+        local {
+            /* ... */
+        }
+        /* ... more flavors ... */
+    }
+    
+    /* Reconfigure `android.packagingOptions{...}` for supporting well JSC integration. */
+    applyJscPackagingOptions()
 }
 ```
+
+Build types and Flavors are corresponding the Android Build Plugin - [android_build_variants]
+
+### Compatibility
+
+Our plugin is designed for replacing the old React Native `react.gradle` code by properly maintained and heavily tested code. Just for that purpose everything in plugin configuration is backward compatible with old approaches.
+
+We are targeting to replace RN 0.61 [build scripts](https://github.com/facebook/react-native/blob/0.61-stable/react.gradle).
+
+Those lines of code below are equal:
+
+```groovy
+project.ext.react = [
+    entryFile   : "index.js",
+    enableHermes: false,  // clean and rebuild if changing
+]
+
+// replaced by
+
+react {
+    entryFile = "index.js"
+    enableHermes = false
+}
+``` 
+
+When you use the plugin DSL for configuration, plugin will take care for reflecting 
+any defined configuration in `project.ext.react` array/collection. In other words you 
+can combine old and approach and current plugin in one project at the same time.
+
+The biggest advantage of the plugin that all the variables definitions are type 
+safe and validated in the moment of gradle script running/editing (depends on IDE you use).  
+
 
 ## Contribute
 
@@ -214,3 +262,4 @@ References:
 - <https://github.com/FRI-DAY/elasticmq-gradle-plugin>
 
 [kotlin_dsl]: https://github.com/gradle/kotlin-dsl
+[android_build_variants]: https://developer.android.com/studio/build/build-variants
