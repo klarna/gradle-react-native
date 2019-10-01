@@ -33,7 +33,7 @@ plugins {
     id("com.github.ben-manes.versions") version "0.25.0"
 
     /* https://github.com/JLLeitschuh/ktlint-gradle */
-    id("org.jlleitschuh.gradle.ktlint") version "8.2.0" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "9.0.0" apply false
 
     /* https://github.com/Kotlin/dokka */
     id("org.jetbrains.dokka") version "0.9.18" apply false

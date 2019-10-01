@@ -17,6 +17,7 @@ plugins {
     id("org.jetbrains.dokka")
     id("org.jlleitschuh.gradle.ktlint")
     id("com.adarshr.test-logger")
+    id("maven-publish")
 }
 
 repositories {
@@ -94,6 +95,14 @@ pluginBundle {
         "reactnative" {
             displayName = "ReactNative build plugin"
             tags = listOf("gradle", "plugin", "reactnative")
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            url = uri("../.maven-local")
         }
     }
 }
@@ -241,22 +250,24 @@ ktlint {
 
     verbose.set(true)
     android.set(true)
-    reporters.set(
-        setOf(
-            ReporterType.CHECKSTYLE,
-            ReporterType.JSON
-        )
-    )
+    reporters {
+        reporter(ReporterType.CHECKSTYLE)
+        reporter(ReporterType.JSON)
+    }
 
     additionalEditorconfigFile.set(file(".editorconfig"))
     // Unsupported now by current version of the plugin.
     // disabledRules should be placed into .editorconfig file temporary
-//        disabledRules.set(setOf(
-//                "import-ordering"
-//        ))
+    disabledRules.set(
+        setOf(
+            "import-ordering",
+            "final-newline"
+        )
+    )
 
     filter {
-        exclude { element -> element.file.path.contains("generated/") }
+        exclude("**/generated/**")
+        include("**/kotlin/**")
     }
 }
 //endregion
