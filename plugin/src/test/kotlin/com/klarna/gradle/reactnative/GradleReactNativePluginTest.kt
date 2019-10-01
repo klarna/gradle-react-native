@@ -13,7 +13,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import com.klarna.gradle.reactnative.ReactNativeExtension as RNConfig
 import com.klarna.gradle.reactnative.ReactNativeExtension.Companion.EXTENSION as EXTENSION_REACT
@@ -388,10 +387,6 @@ class GradleReactNativePluginTest {
         // when
         assertNotNull(project.extensions.getByName(EXTENSION_REACT), "plugin extension exists")
         assertFalse(project.extra.has("react"), "compatibility extras exists")
-
-        @Suppress("UNCHECKED_CAST")
-        val rc = project.extra.get("react") as Map<String, *>
-        assertNull(rc, "compatibility extras exists")
     }
 
     @Test
