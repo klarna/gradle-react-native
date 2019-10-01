@@ -192,7 +192,20 @@ gradle.publish.secret={secret2}
 Create file in root of the project `credentials.properties` and place those keys into it.
 
 ```bash
-./gradlew publishPlugins
+# increase version MINOR part, switch to RELEASE from any (alpha, beta, rc) and force tag apply
+gradle/version-up.sh --minor --release --apply
+
+# take version from properties file
+export VER=$(cat version.properties | grep snapshot.version | cut -d'=' -f2)
+
+# switch to release TAG as a branch
+git checkout -b $VER $VER
+
+# force full rebuild
+./gradlew clean build assembleRelease -Pversion=$VER
+
+# now we can publish the version
+./gradlew publishPlugins -Pversion=$VER
 ```
 
 #### Why Not A Standard Approach
