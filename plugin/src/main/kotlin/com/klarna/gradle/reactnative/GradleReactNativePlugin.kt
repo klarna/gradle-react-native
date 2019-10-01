@@ -18,10 +18,14 @@ const val PLUGIN_NAME_ID = "com.klarna.gradle.reactnative"
  * @see <a href="https://github.com/leleliu008/BintrayUploadGradlePlugin">Bintray Upload Plugin<a>
  * */
 open class GradleReactNativePlugin : Plugin<Project> {
+    /** Extracted plugin version. */
+    private val pluginVersion: String? = GradleReactNativePlugin::class.java
+        .`package`.implementationVersion
+
     /** Register extensions and tasks for provided project. */
     override fun apply(project: Project) {
         with(project) {
-            // Create the NamedDomainObjectContainers
+            logger.info("plugin '$PLUGIN' version: $pluginVersion")
 
             // Register extensions and forward project instance to it as parameter
             extensions.create(RnConfig.EXTENSION, RnConfig::class.java, project)

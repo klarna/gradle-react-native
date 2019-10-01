@@ -77,11 +77,6 @@ allprojects {
 
 /* Apply gradle plugins */
 allprojects {
-    //region ktlint
-    // We want to apply ktlint at all project level because it also checks build gradle files
-//    apply(plugin = "org.jlleitschuh.gradle.ktlint")
-
-    //endregion
 }
 
 /* Apply plugins and configurations for sub-projects. */
@@ -138,10 +133,17 @@ arrayOf("debug", "release").forEach { buildType ->
     }
 }
 
-/* Join dependencies of the composed porject with plugin project. ct*/
+/* Join dependencies of the composed project with plugin project. */
 tasks.named("dependencies") {
     dependsOn(
         gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
+    )
+}
+
+/* Print build environment for included Builds in addition to plugin project. */
+tasks.named("buildEnvironment") {
+    dependsOn(
+        gradle.includedBuild("ReactNativePlugin").task(":buildEnvironment")
     )
 }
 

@@ -106,6 +106,17 @@ publishing {
         }
     }
 }
+
+/* Inject into manifest file version and author information. */
+val jar by tasks.getting(Jar::class) {
+    manifest.attributes.apply {
+        put("Implementation-Title", "Gradle React Native Plugin")
+        put("Implementation-Version", project.version)
+        put("Built-By", System.getProperty("user.name"))
+        put("Built-JDK", System.getProperty("java.version"))
+        put("Built-Gradle", project.gradle.gradleVersion)
+    }
+}
 //endregion
 
 //region Functional Tests

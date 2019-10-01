@@ -7,16 +7,25 @@ buildscript {
         compileSdkVersion = 29
         targetSdkVersion = 29
         supportLibVersion = "28.0.0"
+
+        /* If SHAPSHOT enabled and local repository available */
+        useLocalSnapshot = Boolean.parseBoolean("${project.USE_LOCAL_SNAPSHOT}") &&
+            file("../../../.maven-local").exists()
     }
     repositories {
+        maven { url uri("../../../.maven-local") }
         google()
         jcenter()
+        maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
         classpath("com.android.tools.build:gradle:3.5.0")
 
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+        if (useLocalSnapshot) {
+            classpath "com.klarna:plugin:+"
+        } else {
+            classpath "gradle.plugin.com.klarna:plugin:+"
+        }
     }
 }
 
@@ -36,3 +45,6 @@ allprojects {
         jcenter()
     }
 }
+
+logger.lifecycle("allow use local maven snapshot: ${useLocalSnapshot}")
+logger.lifecycle("found '../../../.maven-local' : ${file("../../../.maven-local").exists()}")
