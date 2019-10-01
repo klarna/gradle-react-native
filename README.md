@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/klarna/gradle-react-native.svg?style=svg)](https://circleci.com/gh/klarna/gradle-react-native)
 [![codecov](https://codecov.io/gh/klarna/gradle-react-native/branch/master/graph/badge.svg)](https://codecov.io/gh/klarna/gradle-react-native)
-[![gradlePluginPortal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/com/github/klarna/gradle-react-native/com.klarna.gradle.reactnative.gradle.plugin/maven-metadata.xml.svg?label=gradlePluginPortal)](https://plugins.gradle.org/plugin/com.klarna.gradle.reactnative)
+[![gradlePluginPortal](https://img.shields.io/maven-metadata/v?label=plugin&metadataUrl=https%3A%2F%2Fplugins.gradle.org%2Fm2%2Fcom%2Fklarna%2Fgradle%2Freactnative%2Fcom.klarna.gradle.reactnative.gradle.plugin%2Fmaven-metadata.xml)](https://plugins.gradle.org/plugin/com.klarna.gradle.reactnative)
 
 - [Gradle React Native Plugin](#gradle-react-native-plugin)
   - [Setup](#setup)
@@ -10,7 +10,6 @@
     - [Minimalistic](#minimalistic)
     - [Extended](#extended)
     - [Compatibility](#compatibility)
-  - [| Old React Native | Our Plugin |](#old-react-native--our-plugin)
   - [Contribute](#contribute)
     - [Enable Git Hooks](#enable-git-hooks)
     - [Publishing](#publishing)
@@ -263,3 +262,4 @@ References:
 
 [kotlin_dsl]: https://github.com/gradle/kotlin-dsl
 [android_build_variants]: https://developer.android.com/studio/build/build-variants
+[plugin]: https://plugins.gradle.org/plugin/com.klarna.gradle.reactnative
