@@ -1,4 +1,3 @@
-/* */
 package com.klarna.gradle.reactnative
 
 import kotlin.test.BeforeTest
@@ -115,7 +114,7 @@ class GradleReactNativePluginFunctionalTest() : CommonFunctionalTest() {
             android {
                 $ANDROID_SECTION
             }
-            react {
+            ${ReactNativeExtension.EXTENSION} {
                root "../.."
                bundleAssetName "index.android.bundle"
                entryFile "index.android.js"
@@ -147,7 +146,7 @@ class GradleReactNativePluginFunctionalTest() : CommonFunctionalTest() {
                 $ANDROID_BUILD_TYPES_SECTION
                 $ANDROID_FLAVORS_SECTION
             }
-            react {
+            ${ReactNativeExtension.EXTENSION} {
                 root "${DOLLAR}buildDir/../.."
                 bundleAssetName "index.bundle"
                 entryFile "index.js"

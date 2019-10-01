@@ -47,12 +47,21 @@ open class ReactNativeExtension
     var entryFile: String? = "index.android.js"
     /** Type of the react native bundle that we build. */
     var bundleCommand: String? = "ram-bundle"
+    /** Enable compatibility mode with old RN build scripts. */
+    var enableCompatibility: Boolean = true
     /** Collection of the build types. */
     var buildTypes: DlsContainer<BuildTypes> =
         project.container(BuildTypes::class.java)
     /** Collection of the flavors. */
     var productFlavors: DlsContainer<FlavorTypes> =
         project.container(FlavorTypes::class.java)
+    /** Excludes from inputs used for detecting JS code changes */
+    var inputExcludes: List<String> = listOf("android/**", "ios/**")
+    /** Default node tool arguments. Override which node gets called and with what
+     * additional arguments. */
+    var nodeExecutableAndArgs: List<String> = listOf("node")
+    /** Supply additional arguments to the packager */
+    var extraPackagerArgs: List<String> = emptyList()
 
     /** Initialize class instance. */
     init {
