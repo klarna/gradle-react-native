@@ -33,6 +33,10 @@ open class GradleReactNativePlugin : Plugin<Project> {
             // register tasks
             tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
             tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
+
+            if (!extra.has(REACT)) {
+                extra.set(REACT, mutableMapOf<String, Any?>())
+            }
         }
 
         // callbacks
@@ -94,6 +98,13 @@ open class GradleReactNativePlugin : Plugin<Project> {
             extraReact["resourcesDir$buildName"] = bt.resourcesDir
         }
 
+        extraReact["cliPath"] = react.cliPath
+        extraReact["composeSourceMapsPath"] = react.composeSourceMapsPath
+        extraReact["bundleConfig"] = react.bundleConfig
+        extraReact["enableVmCleanup"] = react.enableVmCleanup
+        extraReact["hermesCommand"] = react.hermesCommand
+        extraReact["reactNativeDevServerPort"] = react.reactNativeDevServerPort
+        extraReact["reactNativeInspectorProxyPort"] = react.reactNativeInspectorProxyPort
         extraReact["inputExcludes"] = react.inputExcludes.toImmutableList()
         extraReact["nodeExecutableAndArgs"] = react.nodeExecutableAndArgs.toImmutableList()
         extraReact["extraPackagerArgs"] = react.extraPackagerArgs.toImmutableList()
