@@ -34,14 +34,28 @@ open class GradleReactNativePlugin : Plugin<Project> {
             tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
             tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
 
+            // publish react extras properties on plugin attach
             if (!extra.has(REACT)) {
-                extra.set(REACT, mutableMapOf<String, Any?>())
+                val react = getConfiguration(project)
+                if (react.enableCompatibility) {
+                    composeCompatibilityExtensionConfig(project,
+                        getAndroidConfiguration(project), react)
+                }
             }
         }
 
         // callbacks
+        project.beforeEvaluate(this::beforeProjectEvaluate)
         project.afterEvaluate(this::afterProjectEvaluate)
         project.gradle.addListener(this)
+    }
+
+    /** Preparations that we do before project configuration in completely evaluated. */
+    private fun beforeProjectEvaluate(project: Project) {
+        // Other gradle scripts may expect that a specific `ext` variable
+        // be available for them.
+        val react = getConfiguration(project)
+        project.logger.info("configuration extracted: $react")
     }
 
     /** After project evaluation all plugins and extensions are applied and its right time

@@ -82,14 +82,7 @@ react {
     applyJscPackagingOptions()
 }
 
-afterEvaluate {
-    println "${project.ext.react.toString().replaceAll(", ", ",\n")}"
-}
-
-project.ext.react = [
-    entryFile   : "index.js",
-    enableHermes: false,  // clean and rebuild if changing
-]
+println "${project.ext.react.toString().replaceAll(", ", ",\n")}"
 
 apply from: "../../node_modules/react-native/react.gradle"
 
