@@ -37,10 +37,10 @@ dependencies {
     compileOnly(gradleKotlinDsl())
 
     // https://developer.android.com/studio/releases/gradle-plugin
-    compileOnly("com.android.tools.build:gradle:3.5.0")
+    compileOnly("com.android.tools.build:gradle:3.5.1")
 
     /* required for proper class finding in functional Tests */
-    runtimeOnly("com.android.tools.build:gradle:3.5.0")
+    runtimeOnly("com.android.tools.build:gradle:3.5.1")
 
     // https://docs.gradle.org/current/userguide/test_kit.html
     testImplementation(gradleTestKit())
@@ -51,7 +51,7 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
-    testImplementation("com.android.tools.build:gradle:3.5.0")
+    testImplementation("com.android.tools.build:gradle:3.5.1")
     testImplementation(gradleApi())
     testImplementation(gradleKotlinDsl())
 }
