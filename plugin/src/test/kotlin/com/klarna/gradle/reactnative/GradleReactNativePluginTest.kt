@@ -11,7 +11,6 @@ import org.gradle.kotlin.dsl.extra
 import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import com.klarna.gradle.reactnative.ReactNativeExtension as RNConfig
@@ -19,8 +18,8 @@ import com.klarna.gradle.reactnative.ReactNativeExtension.Companion.EXTENSION as
 
 /** Unit tests.
  *
- * @see <a href="https://github.com/piotrmadry/FirebaseTestLab-Android/tree/master/plugin/src/test/java/com/appunite/firebasetestlabplugin">Tests</a>
- * @see <a href="https://github.com/airbnb/okreplay/tree/master/okreplay-gradle-plugin/src/test/kotlin/okreplay">AirBNB okReplay</a>
+ * @see <a href="http://bit.ly/32ZM79Z">Tests</a>
+ * @see <a href="http://bit.ly/30HnZY5">AirBNB okReplay</a>
  * */
 class GradleReactNativePluginTest {
     @Test
@@ -29,6 +28,7 @@ class GradleReactNativePluginTest {
         val project = ProjectBuilder.builder().build()
 
         // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
@@ -41,6 +41,7 @@ class GradleReactNativePluginTest {
         val project = ProjectBuilder.builder().build()
 
         // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
@@ -53,6 +54,7 @@ class GradleReactNativePluginTest {
         val project = ProjectBuilder.builder().build()
 
         // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
@@ -386,7 +388,9 @@ class GradleReactNativePluginTest {
 
         // when
         assertNotNull(project.extensions.getByName(EXTENSION_REACT), "plugin extension exists")
-        assertFalse(project.extra.has("react"), "compatibility extras exists")
+        assertTrue(project.extra.has("react"), "compatibility extras exists")
+        val rc = project.extra.get("react") as Map<String, *>
+        assertNotNull(rc["enableHermes"], "at least enableHermes should be published on high-level")
     }
 
     @Test

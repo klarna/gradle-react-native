@@ -100,6 +100,11 @@ commands:
                     name: List all tracked files in folder
                     command: |
                         git ls-tree -r master --name-only | grep -e "^plugin/" -e "^sample/ReactNativePlugin/"
+    compose_version:
+        steps:
+            -   run: # version
+                    name: Version Autogenerate
+                    command: bash gradle/version-up.sh
     # <~ end of commands
 
 ## Declare JOBS
@@ -111,9 +116,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # yarn install
                     name: Install ReactNative project dependencies
                     command: |
@@ -144,9 +147,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # build
                     name: Compile Debug Binaries
                     command: |
@@ -165,9 +166,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # build
                     name: Compile Release Binaries
                     command: |
@@ -197,9 +196,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # tests
                     name: Run unit tests
                     command: |
@@ -234,9 +231,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # lint
                     name: Run Lint
                     command: ./gradlew lint
@@ -251,9 +246,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # lint
                     name: Run Lint
                     command: ./gradlew ktlintCheck
@@ -268,9 +261,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # lint
                     name: Run Lint
                     command: ./gradlew detekt
@@ -285,9 +276,7 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # lint
                     name: Run Lint
                     command: ./gradlew dokka
@@ -302,13 +291,12 @@ jobs:
             - checkout
             - checksum_sources
             - restore_dependencies_cache
-            -   run: # version
-                    name: Version Autogenerate
-                    command: bash gradle/version-up.sh
+            - compose_version
             -   run: # publishPlugins
                     name: Run Lint
                     command: |
                         ./gradlew publishPlugins -Pgradle.publish.key=${PUBLISHING_KEY} -Pgradle.publish.secret=${PUBLISHING_SECRET}
+
 
 #
 # https://circleci.com/docs/2.0/workflows/
@@ -318,7 +306,7 @@ workflows:
     # keep our cache always warm
     warmup_cache_daily:
         jobs:
-            -   dependencies
+            - dependencies
         triggers:
             -   schedule: # https://crontab.guru/#0_0_*_*_* - every day
                     cron: "0 0 * * *"
@@ -326,7 +314,7 @@ workflows:
     # Run all quick builds that allows to keep quality
     quick_build:
         jobs:
-            -   dependencies
+            - dependencies
             -   debug:
                     requires:
                         - dependencies
@@ -345,7 +333,7 @@ workflows:
     # code coverage and tests for Pull Requests
     pr_feedback:
         jobs:
-            -   dependencies
+            - dependencies
             -   debug:
                     requires:
                         - dependencies

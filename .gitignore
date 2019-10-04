@@ -24,3 +24,6 @@ CACHE_HASH*
 
 # Publishing credentials
 credentials.properties
+
+# local maven repository for debug
+.maven-local/

@@ -17,6 +17,8 @@ plugins {
     id("org.jetbrains.dokka")
     id("org.jlleitschuh.gradle.ktlint")
     id("com.adarshr.test-logger")
+    id("maven-publish")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 repositories {
@@ -36,10 +38,10 @@ dependencies {
     compileOnly(gradleKotlinDsl())
 
     // https://developer.android.com/studio/releases/gradle-plugin
-    compileOnly("com.android.tools.build:gradle:3.5.0")
+    compileOnly("com.android.tools.build:gradle:3.5.1")
 
     /* required for proper class finding in functional Tests */
-    runtimeOnly("com.android.tools.build:gradle:3.5.0")
+    runtimeOnly("com.android.tools.build:gradle:3.5.1")
 
     // https://docs.gradle.org/current/userguide/test_kit.html
     testImplementation(gradleTestKit())
@@ -50,7 +52,7 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
-    testImplementation("com.android.tools.build:gradle:3.5.0")
+    testImplementation("com.android.tools.build:gradle:3.5.1")
     testImplementation(gradleApi())
     testImplementation(gradleKotlinDsl())
 }
@@ -70,6 +72,11 @@ val functionalTestSourceSet = sourceSets.create("functionalTest") {
     java {
         setSrcDirs(listOf("src/main/kotlin"))
     }
+}
+
+detekt {
+    config = files("${project.rootDir}/.circleci/detekt.yml")
+    parallel = true
 }
 
 //region Publishing
@@ -95,6 +102,25 @@ pluginBundle {
             displayName = "ReactNative build plugin"
             tags = listOf("gradle", "plugin", "reactnative")
         }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            url = uri("../.maven-local")
+        }
+    }
+}
+
+/* Inject into manifest file version and author information. */
+val jar by tasks.getting(Jar::class) {
+    manifest.attributes.apply {
+        put("Implementation-Title", "Gradle React Native Plugin")
+        put("Implementation-Version", project.version)
+        put("Built-By", System.getProperty("user.name"))
+        put("Built-JDK", System.getProperty("java.version"))
+        put("Built-Gradle", project.gradle.gradleVersion)
     }
 }
 //endregion
@@ -241,22 +267,24 @@ ktlint {
 
     verbose.set(true)
     android.set(true)
-    reporters.set(
-        setOf(
-            ReporterType.CHECKSTYLE,
-            ReporterType.JSON
-        )
-    )
+    reporters {
+        reporter(ReporterType.CHECKSTYLE)
+        reporter(ReporterType.JSON)
+    }
 
     additionalEditorconfigFile.set(file(".editorconfig"))
     // Unsupported now by current version of the plugin.
     // disabledRules should be placed into .editorconfig file temporary
-//        disabledRules.set(setOf(
-//                "import-ordering"
-//        ))
+    disabledRules.set(
+        setOf(
+            "import-ordering",
+            "final-newline"
+        )
+    )
 
     filter {
-        exclude { element -> element.file.path.contains("generated/") }
+        exclude("**/generated/**")
+        include("**/kotlin/**")
     }
 }
 //endregion

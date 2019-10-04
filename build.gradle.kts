@@ -24,7 +24,7 @@ plugins {
     id("java-library")
 
     /* https://plugins.gradle.org/plugin/io.gitlab.arturbosch.detekt */
-    id("io.gitlab.arturbosch.detekt") version "1.0.1"
+    id("io.gitlab.arturbosch.detekt") version "1.0.1" apply false
 
     /* https://plugins.gradle.org/plugin/com.gradle.plugin-publish */
     id("com.gradle.plugin-publish") version "0.10.1" apply false
@@ -33,7 +33,7 @@ plugins {
     id("com.github.ben-manes.versions") version "0.25.0"
 
     /* https://github.com/JLLeitschuh/ktlint-gradle */
-    id("org.jlleitschuh.gradle.ktlint") version "8.2.0" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "9.0.0" apply false
 
     /* https://github.com/Kotlin/dokka */
     id("org.jetbrains.dokka") version "0.9.18" apply false
@@ -77,22 +77,17 @@ allprojects {
 
 /* Apply gradle plugins */
 allprojects {
-    //region ktlint
-    // We want to apply ktlint at all project level because it also checks build gradle files
-//    apply(plugin = "org.jlleitschuh.gradle.ktlint")
-
-    //endregion
 }
 
 /* Apply plugins and configurations for sub-projects. */
 subprojects {
     //region detekt
-    apply(plugin = "io.gitlab.arturbosch.detekt")
-
-    detekt {
-        config = files("${project.rootDir}/.circleci/detekt.yml")
-        parallel = true
-    }
+//    apply(plugin = "io.gitlab.arturbosch.detekt")
+//
+//    detekt {
+//        config = files("${project.rootDir}/.circleci/detekt.yml")
+//        parallel = true
+//    }
     //endregion
 
     //region JaCoCo
@@ -138,10 +133,17 @@ arrayOf("debug", "release").forEach { buildType ->
     }
 }
 
-/* Join dependencies of the composed porject with plugin project. ct*/
+/* Join dependencies of the composed project with plugin project. */
 tasks.named("dependencies") {
     dependsOn(
         gradle.includedBuild("ReactNativePlugin").task(":app:dependencies")
+    )
+}
+
+/* Print build environment for included Builds in addition to plugin project. */
+tasks.named("buildEnvironment") {
+    dependsOn(
+        gradle.includedBuild("ReactNativePlugin").task(":buildEnvironment")
     )
 }
 

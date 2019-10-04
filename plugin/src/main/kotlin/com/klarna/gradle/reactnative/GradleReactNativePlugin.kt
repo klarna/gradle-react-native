@@ -18,10 +18,14 @@ const val PLUGIN_NAME_ID = "com.klarna.gradle.reactnative"
  * @see <a href="https://github.com/leleliu008/BintrayUploadGradlePlugin">Bintray Upload Plugin<a>
  * */
 open class GradleReactNativePlugin : Plugin<Project> {
+    /** Extracted plugin version. */
+    private val pluginVersion: String? = GradleReactNativePlugin::class.java
+        .`package`.implementationVersion
+
     /** Register extensions and tasks for provided project. */
     override fun apply(project: Project) {
         with(project) {
-            // Create the NamedDomainObjectContainers
+            logger.info("plugin '$PLUGIN' version: $pluginVersion")
 
             // Register extensions and forward project instance to it as parameter
             extensions.create(RnConfig.EXTENSION, RnConfig::class.java, project)
@@ -29,11 +33,29 @@ open class GradleReactNativePlugin : Plugin<Project> {
             // register tasks
             tasks.register(CompileRnBundleTask.NAME, CompileRnBundleTask::class.java, project)
             tasks.register(CopyRnBundleTask.NAME, CopyRnBundleTask::class.java, project)
+
+            // publish react extras properties on plugin attach
+            if (!extra.has(REACT)) {
+                val react = getConfiguration(project)
+                if (react.enableCompatibility) {
+                    composeCompatibilityExtensionConfig(project,
+                        getAndroidConfiguration(project), react)
+                }
+            }
         }
 
         // callbacks
+        project.beforeEvaluate(this::beforeProjectEvaluate)
         project.afterEvaluate(this::afterProjectEvaluate)
         project.gradle.addListener(this)
+    }
+
+    /** Preparations that we do before project configuration in completely evaluated. */
+    private fun beforeProjectEvaluate(project: Project) {
+        // Other gradle scripts may expect that a specific `ext` variable
+        // be available for them.
+        val react = getConfiguration(project)
+        project.logger.info("configuration extracted: $react")
     }
 
     /** After project evaluation all plugins and extensions are applied and its right time
@@ -76,6 +98,7 @@ open class GradleReactNativePlugin : Plugin<Project> {
         extraReact["entryFile"] = react.entryFile
         extraReact["bundleCommand"] = react.bundleCommand
         extraReact["enableCompatibility"] = react.enableCompatibility
+        extraReact["enableHermes"] = false
 
         iterateVariants(react) { bt, fl ->
             val variant = fl.title + bt.title
@@ -90,6 +113,13 @@ open class GradleReactNativePlugin : Plugin<Project> {
             extraReact["resourcesDir$buildName"] = bt.resourcesDir
         }
 
+        extraReact["cliPath"] = react.cliPath
+        extraReact["composeSourceMapsPath"] = react.composeSourceMapsPath
+        extraReact["bundleConfig"] = react.bundleConfig
+        extraReact["enableVmCleanup"] = react.enableVmCleanup
+        extraReact["hermesCommand"] = react.hermesCommand
+        extraReact["reactNativeDevServerPort"] = react.reactNativeDevServerPort
+        extraReact["reactNativeInspectorProxyPort"] = react.reactNativeInspectorProxyPort
         extraReact["inputExcludes"] = react.inputExcludes.toImmutableList()
         extraReact["nodeExecutableAndArgs"] = react.nodeExecutableAndArgs.toImmutableList()
         extraReact["extraPackagerArgs"] = react.extraPackagerArgs.toImmutableList()

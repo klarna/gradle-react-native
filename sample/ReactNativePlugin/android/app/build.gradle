@@ -1,4 +1,5 @@
 apply plugin: "com.android.application"
+apply plugin: "com.klarna.gradle.reactnative"
 
 import com.android.build.OutputFile
 
@@ -75,11 +76,15 @@ import com.android.build.OutputFile
  * ]
  */
 
+react {
+    entryFile = "index.js"
+
+    applyJscPackagingOptions()
+}
+
+println "has ext.react = ${project.ext.has("react")}"
 project.ext.react = [
-    entryFile   : "index.js",
-    enableHermes: false,  // clean and rebuild if changing
-    nodeExecutableAndArgs: ["node"],
-    extraPackagerArgs: [],
+    enableHermes: false
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -180,15 +185,6 @@ android {
             }
 
         }
-    }
-
-    packagingOptions {
-        pickFirst '**/armeabi-v7a/libc++_shared.so'
-        pickFirst '**/x86/libc++_shared.so'
-        pickFirst '**/arm64-v8a/libc++_shared.so'
-        pickFirst '**/x86_64/libc++_shared.so'
-        pickFirst '**/x86/libjsc.so'
-        pickFirst '**/armeabi-v7a/libjsc.so'
     }
 }
 

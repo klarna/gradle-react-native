@@ -62,6 +62,21 @@ open class ReactNativeExtension
     var nodeExecutableAndArgs: List<String> = listOf("node")
     /** Supply additional arguments to the packager */
     var extraPackagerArgs: List<String> = emptyList()
+    /** CLI tool path. */
+    var cliPath: String? = "node_modules/react-native/cli.js"
+    /** Sourcemap file destination. */
+    var composeSourceMapsPath: String? = "node_modules/react-native/scripts/compose-source-maps.js"
+    /** Custom configuration for react native bandler. */
+    var bundleConfig: String? = null
+    /** Cleanup in native libs, remove un-needed `*.so` files. */
+    var enableVmCleanup: Boolean? = true
+    /** Path to Hermes engine binary. `%OS-BIN%` will be replaced
+     * by corresponding to OS folder name: win64-bin, osx-bin, linux64-bin. */
+    var hermesCommand: String? = "../../node_modules/hermesvm/%OS-BIN%/hermes"
+    /** Default server port. By default: 8081 */
+    var reactNativeDevServerPort: String? = "8081"
+    /** Inspector proxy port. By default: 8081 */
+    var reactNativeInspectorProxyPort: String? = reactNativeDevServerPort
 
     /** Initialize class instance. */
     init {
