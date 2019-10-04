@@ -18,6 +18,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint")
     id("com.adarshr.test-logger")
     id("maven-publish")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 repositories {
@@ -71,6 +72,11 @@ val functionalTestSourceSet = sourceSets.create("functionalTest") {
     java {
         setSrcDirs(listOf("src/main/kotlin"))
     }
+}
+
+detekt {
+    config = files("${project.rootDir}/.circleci/detekt.yml")
+    parallel = true
 }
 
 //region Publishing

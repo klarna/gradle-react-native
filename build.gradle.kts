@@ -24,7 +24,7 @@ plugins {
     id("java-library")
 
     /* https://plugins.gradle.org/plugin/io.gitlab.arturbosch.detekt */
-    id("io.gitlab.arturbosch.detekt") version "1.0.1"
+    id("io.gitlab.arturbosch.detekt") version "1.0.1" apply false
 
     /* https://plugins.gradle.org/plugin/com.gradle.plugin-publish */
     id("com.gradle.plugin-publish") version "0.10.1" apply false
@@ -82,12 +82,12 @@ allprojects {
 /* Apply plugins and configurations for sub-projects. */
 subprojects {
     //region detekt
-    apply(plugin = "io.gitlab.arturbosch.detekt")
-
-    detekt {
-        config = files("${project.rootDir}/.circleci/detekt.yml")
-        parallel = true
-    }
+//    apply(plugin = "io.gitlab.arturbosch.detekt")
+//
+//    detekt {
+//        config = files("${project.rootDir}/.circleci/detekt.yml")
+//        parallel = true
+//    }
     //endregion
 
     //region JaCoCo
