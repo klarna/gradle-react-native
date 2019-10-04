@@ -29,6 +29,7 @@ class GradleReactNativePluginTest {
         val project = ProjectBuilder.builder().build()
 
         // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
@@ -41,6 +42,7 @@ class GradleReactNativePluginTest {
         val project = ProjectBuilder.builder().build()
 
         // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
@@ -53,6 +55,7 @@ class GradleReactNativePluginTest {
         val project = ProjectBuilder.builder().build()
 
         // When
+        project.plugins.apply(GradleReactNativePlugin.ANDROID_APP_PLUGIN)
         project.plugins.apply(GradleReactNativePlugin.PLUGIN)
 
         // Then
@@ -386,7 +389,9 @@ class GradleReactNativePluginTest {
 
         // when
         assertNotNull(project.extensions.getByName(EXTENSION_REACT), "plugin extension exists")
-        assertFalse(project.extra.has("react"), "compatibility extras exists")
+        assertTrue(project.extra.has("react"), "compatibility extras exists")
+        val rc = project.extra.get("react") as Map<String, *>
+        assertNotNull(rc["enableHermes"], "at least enableHermes should be published on high-level")
     }
 
     @Test

@@ -98,6 +98,7 @@ open class GradleReactNativePlugin : Plugin<Project> {
         extraReact["entryFile"] = react.entryFile
         extraReact["bundleCommand"] = react.bundleCommand
         extraReact["enableCompatibility"] = react.enableCompatibility
+        extraReact["enableHermes"] = false
 
         iterateVariants(react) { bt, fl ->
             val variant = fl.title + bt.title
